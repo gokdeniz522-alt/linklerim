@@ -8,11 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
 import { Loader2 } from 'lucide-react';
 
-interface PostFormProps {
-  onPostCreated: () => void;
-}
-
-export const PostForm = ({ onPostCreated }: PostFormProps) => {
+export const PostForm = () => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -39,7 +35,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
       setUsername('');
       setContent('');
       setImageUrl('');
-      onPostCreated();
     }
   };
 

@@ -27,6 +27,21 @@ const Index = () => {
 
   useEffect(() => {
     fetchPosts();
+
+    const channel = supabase
+      .channel('realtime posts')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        (payload) => {
+          setPosts((currentPosts) => [payload.new as Post, ...currentPosts]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
@@ -37,7 +52,7 @@ const Index = () => {
       </header>
       
       <main className="flex flex-col items-center space-y-8">
-        <PostForm onPostCreated={fetchPosts} />
+        <PostForm />
 
         <div className="w-full max-w-2xl space-y-6">
           <h2 className="text-2xl font-semibold tracking-tight text-center">Son Gönderiler</h2>
