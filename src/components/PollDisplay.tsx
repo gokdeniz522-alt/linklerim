@@ -55,7 +55,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
   };
 
   return (
-    <div className="text-primary-foreground">
+    <div className="mt-4 space-y-3 rounded-lg border p-4 text-primary-foreground">
       <p className="font-semibold text-left text-primary-foreground">{pollData.question}</p>
       <div className="space-y-2">
         {pollData.poll_options.map((option) => {
