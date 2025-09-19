@@ -17,7 +17,7 @@ const Index = () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from('posts')
-      .select('*')
+      .select('*, polls(*, poll_options(*))') // Fetch posts with related polls and options
       .order('created_at', { ascending: false });
 
     if (data) {
@@ -38,13 +38,9 @@ const Index = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'posts' },
         (payload) => {
-          setPosts((currentPosts) => {
-            const postExists = currentPosts.some(p => p.id === (payload.new as Post).id);
-            if (postExists) {
-              return currentPosts;
-            }
-            return [payload.new as Post, ...currentPosts];
-          });
+          // For new posts, we might need to fetch poll data separately or just refetch all
+          // For simplicity, we'll just refetch.
+          fetchPosts();
         }
       )
       .subscribe();

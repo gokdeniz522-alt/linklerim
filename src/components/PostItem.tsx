@@ -9,6 +9,19 @@ import { MessageSquare, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Comment, CommentItem } from "./CommentItem";
 import { CommentForm } from "./CommentForm";
+import { PollDisplay } from "./PollDisplay";
+
+// Nested poll structure from Supabase query
+interface PollOption {
+  id: number;
+  option_text: string;
+  votes: number;
+}
+interface Poll {
+  id: number;
+  question: string;
+  poll_options: PollOption[];
+}
 
 export interface Post {
   id: number;
@@ -16,6 +29,7 @@ export interface Post {
   username: string;
   content: string;
   image_url: string | null;
+  polls: Poll[] | null; // A post can have one poll, returned as an array
 }
 
 interface PostItemProps {
@@ -26,6 +40,7 @@ export const PostItem = ({ post }: PostItemProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const poll = post.polls?.[0]; // Get the first poll if it exists
 
   const fetchComments = async () => {
     if (comments.length > 0) return; // Already fetched
@@ -84,6 +99,7 @@ export const PostItem = ({ post }: PostItemProps) => {
             />
           </div>
         )}
+        {poll && <PollDisplay poll={poll} />}
       </CardContent>
       <CardFooter className="flex-col items-start">
         <Button variant="ghost" size="sm" onClick={handleToggleComments} className="-ml-2">
