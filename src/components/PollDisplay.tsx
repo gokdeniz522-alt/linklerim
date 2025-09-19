@@ -68,7 +68,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
               <div key={option.id} className="relative">
                 <Progress value={percentage} className="h-8" />
                 <div className={cn(
-                  "text-primary-foreground ",
+                  "absolute inset-0 flex items-center justify-between px-3 text-sm text-primary-foreground ",
                   isVotedOption ? "font-bold text-black " : "text-foreground text-primary-foreground"
                 )}>
                   <span>{option.option_text}</span>
@@ -81,7 +81,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
               <Button
                 key={option.id}
                 variant="outline"
-                className="w-full justify-start text-primary-foreground"
+                className=""
                 onClick={() => handleVote(option.id)}
               >
                 {option.option_text}
