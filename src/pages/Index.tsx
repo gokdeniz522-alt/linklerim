@@ -4,7 +4,6 @@ import { PostItem, Post } from '@/components/PostItem';
 import { supabase } from '@/lib/supabase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MadeWithDyad } from '@/components/made-with-dyad';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 const Index = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -47,10 +46,7 @@ const Index = () => {
 
   return (
     <div className="container mx-auto max-w-5xl py-8 px-4">
-      <header className="text-center mb-8 relative">
-        <div className="absolute top-0 right-0">
-          <ThemeToggle />
-        </div>
+      <header className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight">Anonim Gönderi Platformu</h1>
         <p className="text-muted-foreground mt-2">Kayıt olmadan düşüncelerini paylaş.</p>
       </header>
