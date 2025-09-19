@@ -6,7 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Shuffle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -62,6 +63,14 @@ const Index = () => {
       <header className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight">Anonim Gönderi Platformu</h1>
         <p className="text-muted-foreground mt-2">Kayıt olmadan düşüncelerini paylaş.</p>
+        <div className="mt-4">
+          <Button asChild>
+            <Link to="/random">
+              <Shuffle className="mr-2 h-4 w-4" />
+              Rastgele Gönderi Keşfet
+            </Link>
+          </Button>
+        </div>
       </header>
       
       <main className="flex flex-col items-center space-y-8">
