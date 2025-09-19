@@ -81,6 +81,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
               <Button
                 key={option.id}
                 variant="outline"
+                className="w-full justify-start text-black"
                 onClick={() => handleVote(option.id)}
               >
                 {option.option_text}
