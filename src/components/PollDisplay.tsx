@@ -56,7 +56,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
 
   return (
     <div className="mt-4 space-y-3 rounded-lg border p-4">
-      <p className="font-semibold text-left text-primary-foreground">{pollData.question}</p>
+      <p className="font-semibold text-left">{pollData.question}</p>
       <div className="space-y-2">
         {pollData.poll_options.map((option) => {
           const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
