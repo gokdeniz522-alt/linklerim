@@ -90,7 +90,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
           }
         })}
       </div>
-      {votedOptionId && <p className="text-xs text-muted-foreground text-right">{totalVotes} Toplam Oy</p>}
+      {votedOptionId && <p className="text-xs text-muted-foreground text-right text-primary-foreground">{totalVotes} Toplam Oy</p>}
     </div>
   );
 };
