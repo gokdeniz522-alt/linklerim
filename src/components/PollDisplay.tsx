@@ -55,8 +55,8 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
   };
 
   return (
-    <div className="mt-4 space-y-3 rounded-lg border p-4">
-      <p className="font-semibold text-left">{pollData.question}</p>
+    <div className="mt-4 space-y-3 rounded-lg border p-4 text-primary-foreground">
+      <p className="font-semibold text-left text-primary-foreground">{pollData.question}</p>
       <div className="space-y-2">
         {pollData.poll_options.map((option) => {
           const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
@@ -81,7 +81,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
               <Button
                 key={option.id}
                 variant="outline"
-                className="w-full justify-start text-black"
+                className="w-full justify-start text-primary-foreground"
                 onClick={() => handleVote(option.id)}
               >
                 {option.option_text}
@@ -90,7 +90,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
           }
         })}
       </div>
-      {votedOptionId && <p className="text-xs text-muted-foreground text-right text-primary-foreground">{totalVotes} Toplam Oy</p>}
+      {votedOptionId && <p className="text-xs text-muted-foreground text-right ">{totalVotes} Toplam Oy</p>}
     </div>
   );
 };
