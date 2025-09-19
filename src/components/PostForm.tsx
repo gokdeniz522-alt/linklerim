@@ -8,7 +8,11 @@ import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
 import { Loader2 } from 'lucide-react';
 
-export const PostForm = () => {
+interface PostFormProps {
+  onPostSuccess: () => void;
+}
+
+export const PostForm = ({ onPostSuccess }: PostFormProps) => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -35,6 +39,7 @@ export const PostForm = () => {
       setUsername('');
       setContent('');
       setImageUrl('');
+      onPostSuccess();
     }
   };
 

@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 const Index = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -35,7 +37,13 @@ const Index = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'posts' },
         (payload) => {
-          setPosts((currentPosts) => [payload.new as Post, ...currentPosts]);
+          setPosts((currentPosts) => {
+            const postExists = currentPosts.some(p => p.id === (payload.new as Post).id);
+            if (postExists) {
+              return currentPosts;
+            }
+            return [payload.new as Post, ...currentPosts];
+          });
         }
       )
       .subscribe();
@@ -57,10 +65,23 @@ const Index = () => {
       </header>
       
       <main className="flex flex-col items-center space-y-8">
-        <PostForm />
+        <PostForm onPostSuccess={fetchPosts} />
 
         <div className="w-full">
-          <h2 className="text-2xl font-semibold tracking-tight text-center mb-6">Son Gönderiler</h2>
+          <div className="flex justify-center items-center text-center mb-6">
+            <h2 className="text-2xl font-semibold tracking-tight">Son Gönderiler</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={fetchPosts}
+              disabled={isLoading}
+              className="ml-2"
+            >
+              <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="sr-only">Gönderileri Yenile</span>
+            </Button>
+          </div>
+          
           {isLoading ? (
             <div className="space-y-6 max-w-2xl mx-auto">
               {Array.from({ length: 3 }).map((_, index) => (
