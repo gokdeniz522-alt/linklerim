@@ -45,7 +45,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="container mx-auto max-w-3xl py-8 px-4">
+    <div className="container mx-auto max-w-5xl py-8 px-4">
       <header className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight">Anonim Gönderi Platformu</h1>
         <p className="text-muted-foreground mt-2">Kayıt olmadan düşüncelerini paylaş.</p>
@@ -54,20 +54,25 @@ const Index = () => {
       <main className="flex flex-col items-center space-y-8">
         <PostForm />
 
-        <div className="w-full max-w-2xl space-y-6">
-          <h2 className="text-2xl font-semibold tracking-tight text-center">Son Gönderiler</h2>
+        <div className="w-full">
+          <h2 className="text-2xl font-semibold tracking-tight text-center mb-6">Son Gönderiler</h2>
           {isLoading ? (
-            Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="flex items-center space-x-4 w-full">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-[250px]" />
-                  <Skeleton className="h-4 w-[200px]" />
+            <div className="space-y-6 max-w-2xl mx-auto">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="flex items-start space-x-4 w-full p-6 border rounded-lg">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-[150px]" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-[200px]" />
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           ) : posts.length > 0 ? (
-            posts.map(post => <PostItem key={post.id} post={post} />)
+            <div className="columns-1 md:columns-2 gap-6 space-y-6">
+              {posts.map(post => <PostItem key={post.id} post={post} />)}
+            </div>
           ) : (
             <p className="text-center text-muted-foreground">Henüz hiç gönderi yok. İlk gönderiyi sen paylaş!</p>
           )}

@@ -17,7 +17,7 @@ interface PostItemProps {
 
 export const PostItem = ({ post }: PostItemProps) => {
   return (
-    <Card className="w-full max-w-2xl break-inside-avoid">
+    <Card className="w-full break-inside-avoid">
       <CardHeader>
         <div className="flex items-center space-x-3">
           <Avatar>
