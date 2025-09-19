@@ -69,6 +69,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
                 <Progress value={percentage} className="h-8" />
                 <div className={cn(
                   "absolute inset-0 flex items-center justify-between px-3 text-sm text-primary-foreground",
+                  isVotedOption ? "font-bold"
                 )}>
                   <span>{option.option_text}</span>
                   <span>{Math.round(percentage)}% ({option.votes})</span>
