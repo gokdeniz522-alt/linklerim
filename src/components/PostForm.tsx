@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/supabase';
-import { showError, showSuccess } from '@/utils/toast';
+import { showError, showSuccess, showLoading, dismissToast, updateToastError } from '@/utils/toast';
 import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { MediaUploader } from './MediaUploader';
@@ -99,14 +99,12 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
           return;
         }
       } else if (mediaType === 'video') {
+        const toastId = showLoading('Video kaydı oluşturuluyor...');
         try {
           // Adım 1: Video nesnesi oluştur ve videoId al
           const createResponse = await fetch(`${API_VIDEO_BASE_URL}/videos`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${API_VIDEO_KEY}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_VIDEO_KEY}` },
             body: JSON.stringify({ title: `Gönderi - ${username}` })
           });
 
@@ -116,26 +114,29 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
           }
           const videoData = await createResponse.json();
           const videoId = videoData.videoId;
-
-          if (!videoId) {
-            throw new Error('API\'den geçerli bir videoId alınamadı.');
-          }
+          if (!videoId) throw new Error('API\'den geçerli bir videoId alınamadı.');
 
           // Adım 2: Alınan videoId ile dosyayı yükle
+          toast.loading('Video yükleniyor...', { id: toastId });
           const uploader = new VideoUploader({ apiKey: API_VIDEO_KEY, baseUri: API_VIDEO_BASE_URL });
-          const video = await uploader.uploadWithVideoId(videoId, mediaFile);
+          const video = await uploader.uploadWithVideoId(videoId, mediaFile, {
+            onProgress(event) {
+              console.log(`Video Yükleme: ${Math.round((event.uploadedBytes / event.totalBytes) * 100)}%`);
+            },
+          });
           uploadedVideoPlayerUrl = video.assets.iframe;
+          dismissToast(toastId);
 
         } catch (error) {
-          setIsLoading(false);
-          showError(`Video yükleme hatası: ${error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu.'}`);
+          const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+          updateToastError(toastId, `Video yükleme hatası: ${errorMessage}`);
           console.error("Video upload process error:", error);
+          setIsLoading(false);
           return;
         }
       }
     }
 
-    // 3. Gönderiyi Supabase'e kaydet
     const { data: postData, error: postError } = await supabase
       .from('posts')
       .insert([{ username, content, image_url: uploadedImageUrl, video_player_url: uploadedVideoPlayerUrl }])
@@ -147,7 +148,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
       return;
     }
 
-    // 4. Anket varsa, anketi ve seçenekleri kaydet
     if (isCreatingPoll && postData) {
       const { data: pollData, error: pollError } = await supabase
         .from('polls').insert([{ post_id: postData.id, question: pollQuestion }]).select().single();
