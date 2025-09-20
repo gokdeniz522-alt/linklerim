@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { PostForm } from '@/components/PostForm';
 import { PostItem, Post } from '@/components/PostItem';
 import { supabase } from '@/lib/supabase';
@@ -6,39 +6,97 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Shuffle } from 'lucide-react';
+import { RefreshCw, Shuffle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const POSTS_PER_PAGE = 5;
 
 const Index = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchPosts = async () => {
-    setIsLoading(true);
+  const fetchPosts = useCallback(async (pageNum: number, refresh = false) => {
+    if (isFetchingMore) return;
+
+    if (pageNum === 0 && !refresh) {
+      setIsLoading(true);
+    } else if (pageNum > 0) {
+      setIsFetchingMore(true);
+    }
+
+    const from = pageNum * POSTS_PER_PAGE;
+    const to = from + POSTS_PER_PAGE - 1;
+
     const { data, error } = await supabase
       .from('posts')
       .select('*, polls(*, poll_options(*))')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
     if (data) {
-      setPosts(data);
+      if (refresh) {
+        setPosts(data);
+      } else {
+        setPosts(prevPosts => (pageNum === 0 ? data : [...prevPosts, ...data]));
+      }
+      if (data.length < POSTS_PER_PAGE) {
+        setHasMore(false);
+      }
     }
     if (error) {
       console.error('Error fetching posts:', error);
+      setHasMore(false);
     }
+
     setIsLoading(false);
+    setIsFetchingMore(false);
+  }, [isFetchingMore]);
+
+  const handleRefresh = () => {
+    setPosts([]);
+    setPage(0);
+    setHasMore(true);
+    fetchPosts(0, true);
   };
 
   useEffect(() => {
-    fetchPosts();
+    fetchPosts(page);
+  }, [page]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 200 &&
+        !isFetchingMore &&
+        hasMore
+      ) {
+        setPage(prevPage => prevPage + 1);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, isFetchingMore]);
+
+  useEffect(() => {
     const channel = supabase
       .channel('realtime posts')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'posts' },
-        () => {
-          fetchPosts();
+        async (payload) => {
+          const { data: newPost, error } = await supabase
+            .from('posts')
+            .select('*, polls(*, poll_options(*))')
+            .eq('id', payload.new.id)
+            .single();
+          
+          if (newPost && !error) {
+            setPosts(currentPosts => [newPost, ...currentPosts]);
+          }
         }
       )
       .subscribe();
@@ -61,7 +119,7 @@ const Index = () => {
       
       <main className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
         <aside className="lg:col-span-1 lg:sticky lg:top-8 h-fit">
-          <PostForm onPostSuccess={fetchPosts} />
+          <PostForm />
            <div className="mt-6 text-center">
             <Button asChild variant="outline" className="w-full">
               <Link to="/random">
@@ -78,11 +136,11 @@ const Index = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={fetchPosts}
-              disabled={isLoading}
+              onClick={handleRefresh}
+              disabled={isFetchingMore}
               className="ml-2"
             >
-              <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-5 w-5 ${isFetchingMore ? 'animate-spin' : ''}`} />
               <span className="sr-only">Gönderileri Yenile</span>
             </Button>
           </div>
@@ -106,6 +164,16 @@ const Index = () => {
             </div>
           ) : (
             <p className="text-center text-muted-foreground pt-10">Henüz hiç gönderi yok. İlk gönderiyi sen paylaş!</p>
+          )}
+
+          {isFetchingMore && (
+            <div className="flex justify-center items-center py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {!hasMore && posts.length > 0 && (
+            <p className="text-center text-muted-foreground pt-10">Daha fazla gönderi yok.</p>
           )}
         </div>
       </main>

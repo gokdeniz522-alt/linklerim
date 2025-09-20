@@ -10,13 +10,9 @@ import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { ImageUploader } from './ImageUploader';
 
-interface PostFormProps {
-  onPostSuccess: () => void;
-}
-
 const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
 
-export const PostForm = ({ onPostSuccess }: PostFormProps) => {
+export const PostForm = () => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -144,7 +140,6 @@ export const PostForm = ({ onPostSuccess }: PostFormProps) => {
     setIsLoading(false);
     showSuccess('Gönderiniz başarıyla paylaşıldı!');
     resetForm();
-    onPostSuccess();
   };
 
   return (
