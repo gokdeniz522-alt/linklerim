@@ -91,11 +91,11 @@ export const PostItem = ({ post }: PostItemProps) => {
       <CardContent>
         <p className="text-sm text-left whitespace-pre-wrap">{post.content}</p>
         {post.image_url && (
-          <div className="mt-4">
+          <div className="mt-4 overflow-hidden rounded-lg border bg-muted">
             <img 
               src={post.image_url} 
               alt="Gönderi resmi" 
-              className="rounded-lg max-w-full h-auto object-cover" 
+              className="w-full h-auto max-h-[60vh] object-contain mx-auto" 
             />
           </div>
         )}
