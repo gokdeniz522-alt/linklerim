@@ -10,7 +10,7 @@ import { Loader2, Plus, Trash2, Vote, XCircle, UploadCloud, File as FileIcon } f
 import { Separator } from './ui/separator';
 
 // TODO: Bu API anahtarını https://api.imgbb.com/ adresinden aldığınız kendi anahtarınızla değiştirin.
-const IMGBB_API_KEY = 'BURAYA_KENDI_IMGBB_API_ANAHTARINIZI_YAPISTIRIN';
+const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
 
 interface PostFormProps {
   onPostCreated: () => void;
