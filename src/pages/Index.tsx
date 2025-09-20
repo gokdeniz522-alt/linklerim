@@ -19,7 +19,7 @@ const Index = () => {
   const [hasMore, setHasMore] = useState(true);
 
   const fetchPosts = useCallback(async (pageNum: number, refresh = false) => {
-    if (isFetchingMore) return;
+    if (isFetchingMore && !refresh) return;
 
     if (pageNum === 0 && !refresh) {
       setIsLoading(true);
@@ -64,7 +64,7 @@ const Index = () => {
 
   useEffect(() => {
     fetchPosts(page);
-  }, [page]);
+  }, [page, fetchPosts]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -87,16 +87,10 @@ const Index = () => {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'posts' },
-        async (payload) => {
-          const { data: newPost, error } = await supabase
-            .from('posts')
-            .select('*, polls(*, poll_options(*))')
-            .eq('id', payload.new.id)
-            .single();
-          
-          if (newPost && !error) {
-            setPosts(currentPosts => [newPost, ...currentPosts]);
-          }
+        (payload) => {
+          // Yeni gönderi geldiğinde listeyi yenilemek en güvenli yöntem.
+          // Bu, mevcut gönderilerle birleştirme sorunlarını önler.
+          handleRefresh();
         }
       )
       .subscribe();
@@ -119,7 +113,7 @@ const Index = () => {
       
       <main className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
         <aside className="lg:col-span-1 lg:sticky lg:top-8 h-fit">
-          <PostForm />
+          <PostForm onPostCreated={handleRefresh} />
            <div className="mt-6 text-center">
             <Button asChild variant="outline" className="w-full">
               <Link to="/random">

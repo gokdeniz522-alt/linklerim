@@ -12,7 +12,11 @@ import { ImageUploader } from './ImageUploader';
 
 const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
 
-export const PostForm = () => {
+interface PostFormProps {
+  onPostCreated: () => void;
+}
+
+export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -140,6 +144,7 @@ export const PostForm = () => {
     setIsLoading(false);
     showSuccess('Gönderiniz başarıyla paylaşıldı!');
     resetForm();
+    onPostCreated();
   };
 
   return (
