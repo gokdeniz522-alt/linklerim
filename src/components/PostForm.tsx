@@ -8,16 +8,20 @@ import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
 import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { ImageUploader } from './ImageUploader';
 
 interface PostFormProps {
   onPostSuccess: () => void;
 }
 
+const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
+
 export const PostForm = ({ onPostSuccess }: PostFormProps) => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploaderKey, setUploaderKey] = useState(Date.now());
 
   // Poll state
   const [isCreatingPoll, setIsCreatingPoll] = useState(false);
@@ -47,10 +51,11 @@ export const PostForm = ({ onPostSuccess }: PostFormProps) => {
   const resetForm = () => {
     setUsername('');
     setContent('');
-    setImageUrl('');
+    setImageFile(null);
     setIsCreatingPoll(false);
     setPollQuestion('');
     setPollOptions(['', '']);
+    setUploaderKey(Date.now()); // Reset the uploader component
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,11 +72,35 @@ export const PostForm = ({ onPostSuccess }: PostFormProps) => {
     }
 
     setIsLoading(true);
+    let uploadedImageUrl: string | null = null;
 
-    // 1. Insert Post
+    // 1. Upload image to ImgBB if it exists
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      
+      try {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await response.json();
+        if (result.success) {
+          uploadedImageUrl = result.data.url;
+        } else {
+          throw new Error(result.error?.message || 'Resim yüklenemedi.');
+        }
+      } catch (error) {
+        setIsLoading(false);
+        showError(`Resim yükleme hatası: ${error instanceof Error ? error.message : String(error)}`);
+        return;
+      }
+    }
+
+    // 2. Insert Post to Supabase
     const { data: postData, error: postError } = await supabase
       .from('posts')
-      .insert([{ username, content, image_url: imageUrl || null }])
+      .insert([{ username, content, image_url: uploadedImageUrl }])
       .select()
       .single();
 
@@ -81,7 +110,7 @@ export const PostForm = ({ onPostSuccess }: PostFormProps) => {
       return;
     }
 
-    // 2. If poll exists, insert poll and options
+    // 3. If poll exists, insert poll and options
     if (isCreatingPoll && postData) {
       const { data: pollData, error: pollError } = await supabase
         .from('polls')
@@ -90,7 +119,6 @@ export const PostForm = ({ onPostSuccess }: PostFormProps) => {
         .single();
 
       if (pollError) {
-        // Here you might want to delete the post for consistency
         showError('Anket oluşturulamadı: ' + pollError.message);
         setIsLoading(false);
         return;
@@ -135,8 +163,8 @@ export const PostForm = ({ onPostSuccess }: PostFormProps) => {
             <Textarea id="content" placeholder="Ne düşünüyorsunuz?" value={content} onChange={(e) => setContent(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image-url">Resim URL'si (İsteğe Bağlı)</Label>
-            <Input id="image-url" placeholder="https://ornek.com/resim.jpg" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+            <Label>Resim Yükle (İsteğe Bağlı)</Label>
+            <ImageUploader key={uploaderKey} onFileSelect={setImageFile} />
           </div>
           
           <Separator />
