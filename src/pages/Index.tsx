@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { PostForm } from '@/components/PostForm';
 import { PostItem, Post } from '@/components/PostItem';
 import { supabase } from '@/lib/supabase';
@@ -17,9 +17,11 @@ const Index = () => {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const fetchingRef = useRef(false);
 
   const fetchPosts = useCallback(async (pageNum: number, refresh = false) => {
-    if (isFetchingMore && !refresh) return;
+    if (fetchingRef.current && !refresh) return;
+    fetchingRef.current = true;
 
     if (pageNum === 0 && !refresh) {
       setIsLoading(true);
@@ -53,7 +55,8 @@ const Index = () => {
 
     setIsLoading(false);
     setIsFetchingMore(false);
-  }, [isFetchingMore]);
+    fetchingRef.current = false;
+  }, []);
 
   const handleRefresh = () => {
     setPosts([]);
@@ -88,8 +91,6 @@ const Index = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'posts' },
         (payload) => {
-          // Yeni gönderi geldiğinde listeyi yenilemek en güvenli yöntem.
-          // Bu, mevcut gönderilerle birleştirme sorunlarını önler.
           handleRefresh();
         }
       )
@@ -98,7 +99,7 @@ const Index = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [handleRefresh]);
 
   return (
     <div className="container mx-auto max-w-7xl py-8 px-4 relative">
