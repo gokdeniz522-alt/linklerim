@@ -1,58 +1,61 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud, Image as ImageIcon, X } from 'lucide-react';
+import { UploadCloud, X, Video, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface ImageUploaderProps {
-  onFileSelect: (file: File | null) => void;
+interface MediaUploaderProps {
+  onFileSelect: (file: File | null, fileType: 'image' | 'video' | null) => void;
 }
 
-export const ImageUploader = ({ onFileSelect }: ImageUploaderProps) => {
+export const MediaUploader = ({ onFileSelect }: MediaUploaderProps) => {
   const [preview, setPreview] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<'image' | 'video' | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
+      const type = file.type.startsWith('image/') ? 'image' : 'video';
       setPreview(URL.createObjectURL(file));
-      onFileSelect(file);
+      setFileType(type);
+      onFileSelect(file, type);
     }
   }, [onFileSelect]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/jpeg': [],
-      'image/png': [],
-      'image/gif': [],
-      'image/webp': [],
-      'image/heic': [],
-      'image/avif': [],
+      'image/*': ['.jpeg', '.png', '.gif', '.webp'],
+      'video/*': ['.mp4', '.mov', '.webm']
     },
-    maxSize: 32 * 1024 * 1024, // 32 MB
+    maxSize: 128 * 1024 * 1024, // 128 MB
     multiple: false,
   });
 
-  const handleRemoveImage = () => {
-    setPreview(null);
-    onFileSelect(null);
-    // Revoke the object URL to free up memory
+  const handleRemoveMedia = () => {
     if (preview) {
       URL.revokeObjectURL(preview);
     }
+    setPreview(null);
+    setFileType(null);
+    onFileSelect(null, null);
   };
 
   return (
     <div className="space-y-2">
       {preview ? (
-        <div className="relative group w-full h-48 border rounded-md flex items-center justify-center">
-          <img src={preview} alt="Önizleme" className="max-h-full max-w-full object-contain rounded-md" />
+        <div className="relative group w-full aspect-video border rounded-md flex items-center justify-center bg-muted">
+          {fileType === 'image' ? (
+            <img src={preview} alt="Önizleme" className="max-h-full max-w-full object-contain rounded-md" />
+          ) : (
+            <video src={preview} controls className="max-h-full max-w-full object-contain rounded-md" />
+          )}
           <button
             type="button"
-            onClick={handleRemoveImage}
+            onClick={handleRemoveMedia}
             className="absolute top-2 right-2 bg-background/60 backdrop-blur-sm rounded-full p-1 text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <X className="h-5 w-5" />
-            <span className="sr-only">Resmi Kaldır</span>
+            <span className="sr-only">Medyayı Kaldır</span>
           </button>
         </div>
       ) : (
@@ -69,7 +72,7 @@ export const ImageUploader = ({ onFileSelect }: ImageUploaderProps) => {
             <p className="mb-2 text-sm text-muted-foreground">
               <span className="font-semibold">Yüklemek için tıklayın</span> veya sürükleyip bırakın
             </p>
-            <p className="text-xs text-muted-foreground">PNG, JPG, GIF vb. (Maks. 32MB)</p>
+            <p className="text-xs text-muted-foreground">Resim veya Video (Maks. 128MB)</p>
           </div>
         </div>
       )}

@@ -8,9 +8,11 @@ import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
 import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
-import { ImageUploader } from './ImageUploader';
+import { MediaUploader } from './MediaUploader';
+import { VideoUploader } from '@api.video/browser-sdk';
 
 const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
+const API_VIDEO_KEY = 'YTMX7u744uGYqOWI0ab7uQLyhlmPh04FXFEpGDiMHFt';
 
 interface PostFormProps {
   onPostCreated: () => void;
@@ -19,7 +21,8 @@ interface PostFormProps {
 export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploaderKey, setUploaderKey] = useState(Date.now());
 
@@ -28,10 +31,13 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
 
+  const handleFileSelect = (file: File | null, fileType: 'image' | 'video' | null) => {
+    setMediaFile(file);
+    setMediaType(fileType);
+  };
+
   const handleAddOption = () => {
-    if (pollOptions.length < 5) {
-      setPollOptions([...pollOptions, '']);
-    }
+    if (pollOptions.length < 5) setPollOptions([...pollOptions, '']);
   };
 
   const handleRemoveOption = (index: number) => {
@@ -51,11 +57,12 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const resetForm = () => {
     setUsername('');
     setContent('');
-    setImageFile(null);
+    setMediaFile(null);
+    setMediaType(null);
     setIsCreatingPoll(false);
     setPollQuestion('');
     setPollOptions(['', '']);
-    setUploaderKey(Date.now()); // Reset the uploader component
+    setUploaderKey(Date.now());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,45 +71,51 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
       showError('Kullanıcı adı ve gönderi içeriği boş olamaz.');
       return;
     }
-    if (isCreatingPoll) {
-      if (!pollQuestion.trim() || pollOptions.some(opt => !opt.trim())) {
-        showError('Anket sorusu ve tüm seçenekler dolu olmalıdır.');
-        return;
-      }
+    if (isCreatingPoll && (!pollQuestion.trim() || pollOptions.some(opt => !opt.trim()))) {
+      showError('Anket sorusu ve tüm seçenekler dolu olmalıdır.');
+      return;
     }
 
     setIsLoading(true);
     let uploadedImageUrl: string | null = null;
+    let uploadedVideoPlayerUrl: string | null = null;
 
-    // 1. Upload image to ImgBB if it exists
-    if (imageFile) {
-      const formData = new FormData();
-      formData.append('image', imageFile);
-      
-      try {
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-          method: 'POST',
-          body: formData,
-        });
-        const result = await response.json();
-        if (result.success) {
-          uploadedImageUrl = result.data.url;
-        } else {
-          throw new Error(result.error?.message || 'Resim yüklenemedi.');
+    // 1. Upload media if it exists
+    if (mediaFile) {
+      if (mediaType === 'image') {
+        const formData = new FormData();
+        formData.append('image', mediaFile);
+        try {
+          const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
+          const result = await response.json();
+          if (result.success) {
+            uploadedImageUrl = result.data.url;
+          } else {
+            throw new Error(result.error?.message || 'Resim yüklenemedi.');
+          }
+        } catch (error) {
+          setIsLoading(false);
+          showError(`Resim yükleme hatası: ${error instanceof Error ? error.message : String(error)}`);
+          return;
         }
-      } catch (error) {
-        setIsLoading(false);
-        showError(`Resim yükleme hatası: ${error instanceof Error ? error.message : String(error)}`);
-        return;
+      } else if (mediaType === 'video') {
+        try {
+          const uploader = new VideoUploader({ apiKey: API_VIDEO_KEY });
+          const video = await uploader.upload(mediaFile);
+          uploadedVideoPlayerUrl = video.assets.iframe;
+        } catch (error) {
+          setIsLoading(false);
+          showError(`Video yükleme hatası: ${error instanceof Error ? error.message : String(error)}`);
+          return;
+        }
       }
     }
 
     // 2. Insert Post to Supabase
     const { data: postData, error: postError } = await supabase
       .from('posts')
-      .insert([{ username, content, image_url: uploadedImageUrl }])
-      .select()
-      .single();
+      .insert([{ username, content, image_url: uploadedImageUrl, video_player_url: uploadedVideoPlayerUrl }])
+      .select().single();
 
     if (postError) {
       setIsLoading(false);
@@ -113,30 +126,19 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
     // 3. If poll exists, insert poll and options
     if (isCreatingPoll && postData) {
       const { data: pollData, error: pollError } = await supabase
-        .from('polls')
-        .insert([{ post_id: postData.id, question: pollQuestion }])
-        .select()
-        .single();
+        .from('polls').insert([{ post_id: postData.id, question: pollQuestion }]).select().single();
 
       if (pollError) {
         showError('Anket oluşturulamadı: ' + pollError.message);
-        setIsLoading(false);
-        return;
+        setIsLoading(false); return;
       }
 
       if (pollData) {
-        const optionsToInsert = pollOptions.map(opt => ({
-          poll_id: pollData.id,
-          option_text: opt,
-        }));
-        const { error: optionsError } = await supabase
-          .from('poll_options')
-          .insert(optionsToInsert);
-
+        const optionsToInsert = pollOptions.map(opt => ({ poll_id: pollData.id, option_text: opt }));
+        const { error: optionsError } = await supabase.from('poll_options').insert(optionsToInsert);
         if (optionsError) {
           showError('Anket seçenekleri oluşturulamadı: ' + optionsError.message);
-          setIsLoading(false);
-          return;
+          setIsLoading(false); return;
         }
       }
     }
@@ -163,8 +165,8 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
             <Textarea id="content" placeholder="Ne düşünüyorsunuz?" value={content} onChange={(e) => setContent(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label>Resim Yükle (İsteğe Bağlı)</Label>
-            <ImageUploader key={uploaderKey} onFileSelect={setImageFile} />
+            <Label>Resim veya Video Yükle (İsteğe Bağlı)</Label>
+            <MediaUploader key={uploaderKey} onFileSelect={handleFileSelect} />
           </div>
           
           <Separator />

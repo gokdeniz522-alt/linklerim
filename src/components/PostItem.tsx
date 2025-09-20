@@ -11,7 +11,6 @@ import { Comment, CommentItem } from "./CommentItem";
 import { CommentForm } from "./CommentForm";
 import { PollDisplay } from "./PollDisplay";
 
-// Nested poll structure from Supabase query
 interface PollOption {
   id: number;
   option_text: string;
@@ -29,7 +28,8 @@ export interface Post {
   username: string;
   content: string;
   image_url: string | null;
-  polls: Poll[] | null; // A post can have one poll, returned as an array
+  video_player_url: string | null;
+  polls: Poll[] | null;
 }
 
 interface PostItemProps {
@@ -40,10 +40,10 @@ export const PostItem = ({ post }: PostItemProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const poll = post.polls?.[0]; // Get the first poll if it exists
+  const poll = post.polls?.[0];
 
   const fetchComments = async () => {
-    if (comments.length > 0) return; // Already fetched
+    if (comments.length > 0) return;
 
     setIsLoadingComments(true);
     const { data, error } = await supabase
@@ -52,25 +52,25 @@ export const PostItem = ({ post }: PostItemProps) => {
       .eq('post_id', post.id)
       .order('created_at', { ascending: true });
 
-    if (data) {
-      setComments(data);
-    }
-    if (error) {
-      console.error("Error fetching comments:", error);
-    }
+    if (data) setComments(data);
+    if (error) console.error("Error fetching comments:", error);
     setIsLoadingComments(false);
   };
 
   const handleToggleComments = () => {
     const newShowState = !showComments;
     setShowComments(newShowState);
-    if (newShowState) {
-      fetchComments();
-    }
+    if (newShowState) fetchComments();
   };
   
   const handleCommentAdded = (newComment: Comment) => {
     setComments(currentComments => [...currentComments, newComment]);
+  };
+
+  // Helper to safely extract src from iframe string
+  const getPlayerUrl = (iframeString: string) => {
+    const match = iframeString.match(/src="([^"]+)"/);
+    return match ? match[1] : '';
   };
 
   return (
@@ -97,6 +97,19 @@ export const PostItem = ({ post }: PostItemProps) => {
               alt="Gönderi resmi" 
               className="w-full h-auto max-h-[60vh] object-contain mx-auto" 
             />
+          </div>
+        )}
+        {post.video_player_url && (
+          <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg border bg-black">
+             <iframe
+              src={getPlayerUrl(post.video_player_url)}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              scrolling="no"
+              allowFullScreen
+              title="Video Player"
+            ></iframe>
           </div>
         )}
         {poll && <PollDisplay poll={poll} />}
