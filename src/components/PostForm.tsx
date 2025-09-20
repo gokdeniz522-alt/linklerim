@@ -5,16 +5,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/supabase';
-import { showError, showSuccess, showLoading, updateToastError, updateToastLoading, updateToastSuccess } from '@/utils/toast';
-import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
+import { showError, showSuccess } from '@/utils/toast';
+import { Loader2, Plus, Trash2, Vote, CheckCircle2, XCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
-import { MediaUploader } from './MediaUploader';
-import { UploadClient } from '@uploadcare/upload-client';
+import { FileUploaderRegular } from '@uploadcare/react-uploader';
+import type { OutputFileEntry } from '@uploadcare/react-uploader';
 
-// LÜTFEN BURAYA KENDİ UPLOADCARE PUBLIC KEY'İNİZİ GİRİN
-const UPLOADCARE_PUBLIC_KEY = 'demopublickey'; // <-- BU SATIRI KENDİ ANAHTARINIZLA DEĞİŞTİRDİĞİNİZDEN EMİN OLUN
-
-const uploadClient = new UploadClient({ publicKey: UPLOADCARE_PUBLIC_KEY });
+// Sizin sağladığınız Public Key kullanılıyor
+const UPLOADCARE_PUBLIC_KEY = '7c5f7d59601cdb95af16';
 
 interface PostFormProps {
   onPostCreated: () => void;
@@ -23,8 +21,8 @@ interface PostFormProps {
 export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploaderKey, setUploaderKey] = useState(Date.now());
 
@@ -33,9 +31,23 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
 
-  const handleFileSelect = (file: File | null, fileType: 'image' | 'video' | null) => {
-    setMediaFile(file);
-    setMediaType(fileType);
+  const handleUploadSuccess = (e: CustomEvent<OutputFileEntry[]>) => {
+    const file = e.detail[0];
+    if (file) {
+      if (file.isImage) {
+        setUploadedImageUrl(file.cdnUrl);
+        setUploadedVideoUrl(null);
+      } else if (file.mimeType?.startsWith('video/')) {
+        setUploadedVideoUrl(file.cdnUrl);
+        setUploadedImageUrl(null);
+      }
+    }
+  };
+
+  const handleRemoveMedia = () => {
+    setUploadedImageUrl(null);
+    setUploadedVideoUrl(null);
+    setUploaderKey(Date.now());
   };
 
   const handleAddOption = () => {
@@ -59,8 +71,8 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const resetForm = () => {
     setUsername('');
     setContent('');
-    setMediaFile(null);
-    setMediaType(null);
+    setUploadedImageUrl(null);
+    setUploadedVideoUrl(null);
     setIsCreatingPoll(false);
     setPollQuestion('');
     setPollOptions(['', '']);
@@ -79,34 +91,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
     }
 
     setIsLoading(true);
-    let uploadedImageUrl: string | null = null;
-    let uploadedVideoUrl: string | null = null;
-
-    if (mediaFile) {
-      const toastId = showLoading(`${mediaType === 'image' ? 'Resim' : 'Video'} yükleniyor...`);
-      try {
-        const result = await uploadClient.uploadFile(mediaFile, {
-          store: 'auto',
-          onProgress: (progress) => {
-            const percent = Math.round(progress.value * 100);
-            updateToastLoading(toastId, `${mediaType === 'image' ? 'Resim' : 'Video'} yükleniyor... ${percent}%`);
-          },
-        });
-
-        if (mediaType === 'image') {
-          uploadedImageUrl = result.cdnUrl;
-        } else if (mediaType === 'video') {
-          uploadedVideoUrl = result.cdnUrl;
-        }
-        updateToastSuccess(toastId, 'Medya başarıyla yüklendi!');
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu.';
-        updateToastError(toastId, `Medya yükleme hatası: ${errorMessage}`);
-        console.error("Uploadcare error:", error);
-        setIsLoading(false);
-        return;
-      }
-    }
 
     const { data: postData, error: postError } = await supabase
       .from('posts')
@@ -144,6 +128,8 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
     onPostCreated();
   };
 
+  const hasMedia = uploadedImageUrl || uploadedVideoUrl;
+
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
@@ -161,7 +147,27 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
           </div>
           <div className="space-y-2">
             <Label>Resim veya Video Yükle (İsteğe Bağlı)</Label>
-            <MediaUploader key={uploaderKey} onFileSelect={handleFileSelect} />
+            {hasMedia ? (
+              <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span>{uploadedImageUrl ? 'Resim' : 'Video'} başarıyla eklendi.</span>
+                </div>
+                <Button type="button" variant="ghost" size="icon" onClick={handleRemoveMedia}>
+                  <XCircle className="h-5 w-5 text-muted-foreground" />
+                </Button>
+              </div>
+            ) : (
+              <FileUploaderRegular
+                key={uploaderKey}
+                pubkey={UPLOADCARE_PUBLIC_KEY}
+                maxFiles={1}
+                imgOnly={false}
+                sourceList="local, url, camera, dropbox, gdrive"
+                onFileUploadSuccess={handleUploadSuccess}
+                classNameUploader="uc-light"
+              />
+            )}
           </div>
           
           <Separator />
