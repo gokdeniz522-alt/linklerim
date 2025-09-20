@@ -31,8 +31,8 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
 
-  const handleUploadSuccess = (e: CustomEvent<OutputFileEntry>) => {
-    const file = e.detail; // DÜZELTME: [0] kaldırıldı, çünkü event doğrudan nesneyi gönderiyor.
+  const handleUploadSuccess = (e: CustomEvent<{ successEntries: OutputFileEntry[] }>) => {
+    const file = e.detail.successEntries[0];
     if (file) {
       if (file.isImage) {
         setUploadedImageUrl(file.cdnUrl);
@@ -164,7 +164,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
                 maxFiles={1}
                 imgOnly={false}
                 sourceList="local, url, camera, dropbox, gdrive"
-                onFileUploadSuccess={handleUploadSuccess}
+                onCommonUploadSuccess={handleUploadSuccess}
                 classNameUploader="uc-light"
               />
             )}
