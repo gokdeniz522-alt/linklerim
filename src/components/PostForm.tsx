@@ -31,15 +31,20 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
 
-  const handleUploadSuccess = (e: CustomEvent<{ successEntries: OutputFileEntry[] }>) => {
-    const file = e.detail.successEntries[0];
-    if (file) {
-      if (file.isImage) {
-        setUploadedImageUrl(file.cdnUrl);
-        setUploadedVideoUrl(null);
-      } else if (file.mimeType?.startsWith('video/')) {
-        setUploadedVideoUrl(file.cdnUrl);
-        setUploadedImageUrl(null);
+  const handleUploaderChange = (files: OutputFileEntry[]) => {
+    // Önceki medya URL'lerini temizle
+    setUploadedImageUrl(null);
+    setUploadedVideoUrl(null);
+
+    if (files.length > 0) {
+      const file = files[0];
+      // Sadece yükleme başarılıysa ve URL mevcutsa state'i güncelle
+      if (file.status === 'success' && file.cdnUrl) {
+        if (file.isImage) {
+          setUploadedImageUrl(file.cdnUrl);
+        } else if (file.mimeType?.startsWith('video/')) {
+          setUploadedVideoUrl(file.cdnUrl);
+        }
       }
     }
   };
@@ -164,7 +169,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
                 maxFiles={1}
                 imgOnly={false}
                 sourceList="local, url, camera, dropbox, gdrive"
-                onCommonUploadSuccess={handleUploadSuccess}
+                onChange={handleUploaderChange}
                 classNameUploader="uc-light"
               />
             )}
