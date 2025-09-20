@@ -31,8 +31,8 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
 
-  const handleUploadSuccess = (e: CustomEvent<OutputFileEntry[]>) => {
-    const file = e.detail[0];
+  const handleUploadSuccess = (e: CustomEvent<OutputFileEntry>) => {
+    const file = e.detail; // DÜZELTME: [0] kaldırıldı, çünkü event doğrudan nesneyi gönderiyor.
     if (file) {
       if (file.isImage) {
         setUploadedImageUrl(file.cdnUrl);
