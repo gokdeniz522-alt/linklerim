@@ -17,7 +17,7 @@ const Index = () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from('posts')
-      .select('*, polls(*, poll_options(*))') // Fetch posts with related polls and options
+      .select('*, polls(*, poll_options(*))')
       .order('created_at', { ascending: false });
 
     if (data) {
@@ -37,9 +37,7 @@ const Index = () => {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'posts' },
-        (payload) => {
-          // For new posts, we might need to fetch poll data separately or just refetch all
-          // For simplicity, we'll just refetch.
+        () => {
           fetchPosts();
         }
       )
@@ -51,28 +49,30 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="container mx-auto max-w-5xl py-8 px-4 relative">
+    <div className="container mx-auto max-w-7xl py-8 px-4 relative">
       <div className="absolute top-8 right-4 md:right-8">
         <ThemeToggle />
       </div>
 
-      <header className="text-center mb-8">
+      <header className="text-center mb-12">
         <h1 className="text-4xl font-bold tracking-tight">Anonim Gönderi Platformu</h1>
         <p className="text-muted-foreground mt-2">Kayıt olmadan düşüncelerini paylaş.</p>
-        <div className="mt-4">
-          <Button asChild>
-            <Link to="/random">
-              <Shuffle className="mr-2 h-4 w-4" />
-              Rastgele Gönderi Keşfet
-            </Link>
-          </Button>
-        </div>
       </header>
       
-      <main className="flex flex-col items-center space-y-8">
-        <PostForm onPostSuccess={fetchPosts} />
+      <main className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+        <aside className="lg:col-span-1 lg:sticky lg:top-8 h-fit">
+          <PostForm onPostSuccess={fetchPosts} />
+           <div className="mt-6 text-center">
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/random">
+                <Shuffle className="mr-2 h-4 w-4" />
+                Rastgele Gönderi Keşfet
+              </Link>
+            </Button>
+          </div>
+        </aside>
 
-        <div className="w-full">
+        <div className="lg:col-span-2">
           <div className="flex justify-center items-center text-center mb-6">
             <h2 className="text-2xl font-semibold tracking-tight">Son Gönderiler</h2>
             <Button
@@ -88,9 +88,9 @@ const Index = () => {
           </div>
           
           {isLoading ? (
-            <div className="space-y-6 max-w-2xl mx-auto">
+            <div className="space-y-6">
               {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="flex items-start space-x-4 w-full p-6 border rounded-lg">
+                <div key={index} className="flex items-start space-x-4 w-full p-6 border rounded-lg bg-card">
                   <Skeleton className="h-12 w-12 rounded-full" />
                   <div className="space-y-2 flex-1">
                     <Skeleton className="h-4 w-[150px]" />
@@ -101,11 +101,11 @@ const Index = () => {
               ))}
             </div>
           ) : posts.length > 0 ? (
-            <div className="columns-1 md:columns-2 gap-6 space-y-6">
+            <div className="space-y-6">
               {posts.map(post => <PostItem key={post.id} post={post} />)}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground">Henüz hiç gönderi yok. İlk gönderiyi sen paylaş!</p>
+            <p className="text-center text-muted-foreground pt-10">Henüz hiç gönderi yok. İlk gönderiyi sen paylaş!</p>
           )}
         </div>
       </main>
