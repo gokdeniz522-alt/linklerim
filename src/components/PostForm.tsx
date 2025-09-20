@@ -9,11 +9,12 @@ import { showError, showSuccess, showLoading, updateToastError, updateToastLoadi
 import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { MediaUploader } from './MediaUploader';
-import { VideoUploader } from '@api.video/video-uploader';
+import { UploadClient } from '@uploadcare/upload-client';
 
-const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
-const API_VIDEO_KEY = 'YTMX7u744uGYqOWI0ab7uQLyhlmPh04FXFEpGDiMHFt';
-const API_VIDEO_BASE_URL = 'https://sandbox.api.video';
+// LÜTFEN BURAYA KENDİ UPLOADCARE PUBLIC KEY'İNİZİ GİRİN
+const UPLOADCARE_PUBLIC_KEY = 'demopublickey'; // Örnek anahtar, kendi anahtarınızla değiştirin
+
+const uploadClient = new UploadClient({ publicKey: UPLOADCARE_PUBLIC_KEY });
 
 interface PostFormProps {
   onPostCreated: () => void;
@@ -79,54 +80,37 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
 
     setIsLoading(true);
     let uploadedImageUrl: string | null = null;
-    let uploadedVideoPlayerUrl: string | null = null;
+    let uploadedVideoUrl: string | null = null;
 
     if (mediaFile) {
-      if (mediaType === 'image') {
-        const formData = new FormData();
-        formData.append('image', mediaFile);
-        try {
-          const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
-          const result = await response.json();
-          if (result.success) {
-            uploadedImageUrl = result.data.url;
-          } else {
-            throw new Error(result.error?.message || 'Resim yüklenemedi.');
-          }
-        } catch (error) {
-          setIsLoading(false);
-          showError(`Resim yükleme hatası: ${error instanceof Error ? error.message : String(error)}`);
-          return;
+      const toastId = showLoading(`${mediaType === 'image' ? 'Resim' : 'Video'} yükleniyor...`);
+      try {
+        const result = await uploadClient.uploadFile(mediaFile, {
+          store: 'auto',
+          onProgress: (progress) => {
+            const percent = Math.round(progress.value * 100);
+            updateToastLoading(toastId, `${mediaType === 'image' ? 'Resim' : 'Video'} yükleniyor... ${percent}%`);
+          },
+        });
+
+        if (mediaType === 'image') {
+          uploadedImageUrl = result.cdnUrl;
+        } else if (mediaType === 'video') {
+          uploadedVideoUrl = result.cdnUrl;
         }
-      } else if (mediaType === 'video') {
-        const toastId = showLoading('Video yükleniyor...');
-        try {
-          const uploader = new VideoUploader({
-            apiKey: API_VIDEO_KEY,
-            baseUri: API_VIDEO_BASE_URL,
-          });
-          const video = await uploader.upload(mediaFile, {
-            title: `Gönderi - ${username}`,
-            onProgress(event) {
-              const percent = Math.round((event.uploadedBytes / event.totalBytes) * 100);
-              updateToastLoading(toastId, `Video yükleniyor... ${percent}%`);
-            },
-          });
-          uploadedVideoPlayerUrl = video.assets.iframe;
-          updateToastSuccess(toastId, 'Video başarıyla yüklendi!');
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
-          updateToastError(toastId, `Video yükleme hatası: ${errorMessage}`);
-          console.error("Video upload process error:", error);
-          setIsLoading(false);
-          return;
-        }
+        updateToastSuccess(toastId, 'Medya başarıyla yüklendi!');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu.';
+        updateToastError(toastId, `Medya yükleme hatası: ${errorMessage}`);
+        console.error("Uploadcare error:", error);
+        setIsLoading(false);
+        return;
       }
     }
 
     const { data: postData, error: postError } = await supabase
       .from('posts')
-      .insert([{ username, content, image_url: uploadedImageUrl, video_player_url: uploadedVideoPlayerUrl }])
+      .insert([{ username, content, image_url: uploadedImageUrl, video_url: uploadedVideoUrl }])
       .select().single();
 
     if (postError) {

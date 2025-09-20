@@ -28,7 +28,7 @@ export interface Post {
   username: string;
   content: string;
   image_url: string | null;
-  video_player_url: string | null;
+  video_url: string | null; // video_player_url -> video_url olarak değiştirildi
   polls: Poll[] | null;
 }
 
@@ -67,12 +67,6 @@ export const PostItem = ({ post }: PostItemProps) => {
     setComments(currentComments => [...currentComments, newComment]);
   };
 
-  // Helper to safely extract src from iframe string
-  const getPlayerUrl = (iframeString: string) => {
-    const match = iframeString.match(/src="([^"]+)"/);
-    return match ? match[1] : '';
-  };
-
   return (
     <Card className="w-full break-inside-avoid">
       <CardHeader>
@@ -99,17 +93,17 @@ export const PostItem = ({ post }: PostItemProps) => {
             />
           </div>
         )}
-        {post.video_player_url && (
+        {post.video_url && (
           <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg border bg-black">
-             <iframe
-              src={getPlayerUrl(post.video_player_url)}
+             <video
+              src={post.video_url}
               width="100%"
               height="100%"
-              frameBorder="0"
-              scrolling="no"
-              allowFullScreen
-              title="Video Player"
-            ></iframe>
+              controls
+              className="w-full h-full object-contain"
+            >
+              Tarayıcınız video etiketini desteklemiyor.
+            </video>
           </div>
         )}
         {poll && <PollDisplay poll={poll} />}
