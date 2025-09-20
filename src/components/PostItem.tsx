@@ -28,7 +28,6 @@ export interface Post {
   username: string;
   content: string;
   image_url: string | null;
-  video_player_url: string | null;
   polls: Poll[] | null;
 }
 
@@ -91,19 +90,6 @@ export const PostItem = ({ post }: PostItemProps) => {
               alt="Gönderi resmi" 
               className="w-full h-auto max-h-[60vh] object-contain mx-auto" 
             />
-          </div>
-        )}
-        {post.video_player_url && (
-          <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg border bg-black">
-             <video
-              src={post.video_player_url}
-              width="100%"
-              height="100%"
-              controls
-              className="w-full h-full object-contain"
-            >
-              Tarayıcınız video etiketini desteklemiyor.
-            </video>
           </div>
         )}
         {poll && <PollDisplay poll={poll} />}

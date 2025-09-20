@@ -22,7 +22,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
-  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploaderKey, setUploaderKey] = useState(Date.now());
 
@@ -32,26 +31,17 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [pollOptions, setPollOptions] = useState(['', '']);
 
   const handleUploaderChange = (files: OutputFileEntry[]) => {
-    // Önceki medya URL'lerini temizle
     setUploadedImageUrl(null);
-    setUploadedVideoUrl(null);
-
     if (files.length > 0) {
       const file = files[0];
-      // Sadece yükleme başarılıysa ve URL mevcutsa state'i güncelle
       if (file.status === 'success' && file.cdnUrl) {
-        if (file.isImage) {
-          setUploadedImageUrl(file.cdnUrl);
-        } else if (file.mimeType?.startsWith('video/')) {
-          setUploadedVideoUrl(file.cdnUrl);
-        }
+        setUploadedImageUrl(file.cdnUrl);
       }
     }
   };
 
   const handleRemoveMedia = () => {
     setUploadedImageUrl(null);
-    setUploadedVideoUrl(null);
     setUploaderKey(Date.now());
   };
 
@@ -77,7 +67,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
     setUsername('');
     setContent('');
     setUploadedImageUrl(null);
-    setUploadedVideoUrl(null);
     setIsCreatingPoll(false);
     setPollQuestion('');
     setPollOptions(['', '']);
@@ -99,7 +88,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
 
     const { data: postData, error: postError } = await supabase
       .from('posts')
-      .insert([{ username, content, image_url: uploadedImageUrl, video_player_url: uploadedVideoUrl }])
+      .insert([{ username, content, image_url: uploadedImageUrl }])
       .select().single();
 
     if (postError) {
@@ -133,7 +122,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
     onPostCreated();
   };
 
-  const hasMedia = uploadedImageUrl || uploadedVideoUrl;
+  const hasMedia = !!uploadedImageUrl;
 
   return (
     <Card className="w-full max-w-2xl">
@@ -151,12 +140,12 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
             <Textarea id="content" placeholder="Ne düşünüyorsunuz?" value={content} onChange={(e) => setContent(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label>Resim veya Video Yükle (İsteğe Bağlı)</Label>
+            <Label>Resim veya GIF Yükle (İsteğe Bağlı)</Label>
             {hasMedia ? (
               <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
                 <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
                   <CheckCircle2 className="h-5 w-5" />
-                  <span>{uploadedImageUrl ? 'Resim' : 'Video'} başarıyla eklendi.</span>
+                  <span>Resim başarıyla eklendi.</span>
                 </div>
                 <Button type="button" variant="ghost" size="icon" onClick={handleRemoveMedia}>
                   <XCircle className="h-5 w-5 text-muted-foreground" />
@@ -167,7 +156,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
                 key={uploaderKey}
                 pubkey={UPLOADCARE_PUBLIC_KEY}
                 maxFiles={1}
-                imgOnly={false}
+                imgOnly={true}
                 sourceList="local, url, camera, dropbox, gdrive"
                 onChange={handleUploaderChange}
                 classNameUploader="uc-light"
