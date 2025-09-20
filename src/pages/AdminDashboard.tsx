@@ -54,12 +54,45 @@ const AdminDashboard = () => {
   const handleDelete = async () => {
     if (!postToDelete) return;
 
-    // Önce ilişkili verileri silmek gerekebilir (eğer cascade delete ayarlanmadıysa)
-    // Bu örnekte, Supabase'de cascade delete ayarlandığını varsayıyoruz.
-    const { error } = await supabase.from('posts').delete().eq('id', postToDelete.id);
+    // 1. Yorumları sil
+    const { error: commentsError } = await supabase
+      .from('comments')
+      .delete()
+      .eq('post_id', postToDelete.id);
 
-    if (error) {
-      showError('Gönderi silinemedi: ' + error.message);
+    if (commentsError) {
+      showError('Gönderiye ait yorumlar silinemedi: ' + commentsError.message);
+      setPostToDelete(null);
+      return;
+    }
+
+    // 2. Anketleri ve anket seçeneklerini sil
+    const { data: polls, error: pollsError } = await supabase
+      .from('polls')
+      .select('id')
+      .eq('post_id', postToDelete.id);
+
+    if (pollsError) {
+      showError('Gönderiye ait anketler bulunamadı: ' + pollsError.message);
+      setPostToDelete(null);
+      return;
+    }
+
+    if (polls && polls.length > 0) {
+      const pollIds = polls.map(p => p.id);
+      
+      // Anket seçeneklerini sil
+      await supabase.from('poll_options').delete().in('poll_id', pollIds);
+      
+      // Anketleri sil
+      await supabase.from('polls').delete().in('id', pollIds);
+    }
+
+    // 3. Son olarak gönderiyi sil
+    const { error: postError } = await supabase.from('posts').delete().eq('id', postToDelete.id);
+
+    if (postError) {
+      showError('Gönderi silinemedi: ' + postError.message);
     } else {
       showSuccess('Gönderi başarıyla silindi.');
       setPosts(posts.filter(p => p.id !== postToDelete.id));
