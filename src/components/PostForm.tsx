@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
 import { Loader2, Plus, Trash2, Vote, XCircle, UploadCloud, File as FileIcon } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { cn } from '@/lib/utils';
 
 // TODO: Bu API anahtarını https://api.imgbb.com/ adresinden aldığınız kendi anahtarınızla değiştirin.
 const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
@@ -27,17 +29,24 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      setSelectedFile(acceptedFiles[0]);
     }
-  };
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/gif': ['.gif'],
+    },
+    multiple: false,
+  });
 
   const handleRemoveMedia = () => {
     setSelectedFile(null);
-    // Reset file input value
-    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
   };
 
   const handleAddOption = () => {
@@ -65,8 +74,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
     setIsCreatingPoll(false);
     setPollQuestion('');
     setPollOptions(['', '']);
-    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,12 +182,20 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
                 </Button>
               </div>
             ) : (
-              <div>
-                <Label htmlFor="file-upload" className="relative flex flex-col items-center justify-center w-full py-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
-                  <UploadCloud className="h-8 w-8 text-muted-foreground" />
-                  <p className="mt-2 text-sm text-muted-foreground">Bir dosya seçin</p>
-                </Label>
-                <Input id="file-upload" type="file" className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} />
+              <div 
+                {...getRootProps()} 
+                className={cn(
+                  "relative flex flex-col items-center justify-center w-full py-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors",
+                  isDragActive && "border-primary bg-primary/10"
+                )}
+              >
+                <input {...getInputProps()} />
+                <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                {isDragActive ? (
+                  <p className="mt-2 text-sm text-primary">Dosyayı buraya bırakın</p>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">Sürükleyip bırakın veya seçmek için tıklayın</p>
+                )}
               </div>
             )}
           </div>
