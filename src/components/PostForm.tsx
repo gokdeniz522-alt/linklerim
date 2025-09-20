@@ -105,7 +105,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
             apiKey: API_VIDEO_KEY,
             baseUri: API_VIDEO_BASE_URL,
           });
-          const video = await uploader.upload(mediaFile);
+          const video = await uploader.upload(mediaFile, { title: `Gönderi - ${username}` });
           uploadedVideoPlayerUrl = video.assets.iframe;
         } catch (error) {
           setIsLoading(false);
