@@ -81,7 +81,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
     let uploadedImageUrl: string | null = null;
     let uploadedVideoPlayerUrl: string | null = null;
 
-    // 1. Upload media if it exists
     if (mediaFile) {
       if (mediaType === 'image') {
         const formData = new FormData();
@@ -101,22 +100,42 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
         }
       } else if (mediaType === 'video') {
         try {
-          const uploader = new VideoUploader({
-            apiKey: API_VIDEO_KEY,
-            baseUri: API_VIDEO_BASE_URL,
+          // Adım 1: Video nesnesi oluştur ve videoId al
+          const createResponse = await fetch(`${API_VIDEO_BASE_URL}/videos`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${API_VIDEO_KEY}`
+            },
+            body: JSON.stringify({ title: `Gönderi - ${username}` })
           });
-          const video = await uploader.upload(mediaFile, { title: `Gönderi - ${username}` });
+
+          if (!createResponse.ok) {
+            const errorBody = await createResponse.json();
+            throw new Error(`Video kaydı oluşturulamadı: ${errorBody.title || 'API Hatası'}`);
+          }
+          const videoData = await createResponse.json();
+          const videoId = videoData.videoId;
+
+          if (!videoId) {
+            throw new Error('API\'den geçerli bir videoId alınamadı.');
+          }
+
+          // Adım 2: Alınan videoId ile dosyayı yükle
+          const uploader = new VideoUploader({ apiKey: API_VIDEO_KEY, baseUri: API_VIDEO_BASE_URL });
+          const video = await uploader.uploadWithVideoId(videoId, mediaFile);
           uploadedVideoPlayerUrl = video.assets.iframe;
+
         } catch (error) {
           setIsLoading(false);
           showError(`Video yükleme hatası: ${error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu.'}`);
-          console.error("Video upload error:", error);
+          console.error("Video upload process error:", error);
           return;
         }
       }
     }
 
-    // 2. Insert Post to Supabase
+    // 3. Gönderiyi Supabase'e kaydet
     const { data: postData, error: postError } = await supabase
       .from('posts')
       .insert([{ username, content, image_url: uploadedImageUrl, video_player_url: uploadedVideoPlayerUrl }])
@@ -128,7 +147,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
       return;
     }
 
-    // 3. If poll exists, insert poll and options
+    // 4. Anket varsa, anketi ve seçenekleri kaydet
     if (isCreatingPoll && postData) {
       const { data: pollData, error: pollError } = await supabase
         .from('polls').insert([{ post_id: postData.id, question: pollQuestion }]).select().single();
