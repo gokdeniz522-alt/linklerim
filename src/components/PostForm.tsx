@@ -9,6 +9,7 @@ import { showError, showSuccess } from '@/utils/toast';
 import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { MediaUploader } from './MediaUploader';
+import { VideoUploader } from '@api.video/video-uploader';
 
 const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
 const API_VIDEO_KEY = 'YTMX7u744uGYqOWI0ab7uQLyhlmPh04FXFEpGDiMHFt';
@@ -100,42 +101,16 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
         }
       } else if (mediaType === 'video') {
         try {
-          // Step 1: Authenticate to get access token
-          const authResponse = await fetch(`${API_VIDEO_BASE_URL}/auth/api-key`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ apiKey: API_VIDEO_KEY }),
+          const uploader = new VideoUploader({
+            apiKey: API_VIDEO_KEY,
+            baseUri: API_VIDEO_BASE_URL,
           });
-          if (!authResponse.ok) throw new Error('api.video kimlik doğrulama başarısız.');
-          const { access_token } = await authResponse.json();
-
-          // Step 2: Create a video object
-          const createVideoResponse = await fetch(`${API_VIDEO_BASE_URL}/videos`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${access_token}`,
-            },
-            body: JSON.stringify({ title: mediaFile.name }),
-          });
-          if (!createVideoResponse.ok) throw new Error('api.video nesnesi oluşturulamadı.');
-          const videoData = await createVideoResponse.json();
-          const videoId = videoData.videoId;
-
-          // Step 3: Upload the video file
-          const uploadResponse = await fetch(`${API_VIDEO_BASE_URL}/videos/${videoId}/source`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${access_token}` },
-            body: mediaFile,
-          });
-          if (!uploadResponse.ok) throw new Error('Video dosyası yüklenemedi.');
-          const finalVideoData = await uploadResponse.json();
-          
-          uploadedVideoPlayerUrl = finalVideoData.assets.iframe;
-
+          const video = await uploader.upload(mediaFile);
+          uploadedVideoPlayerUrl = video.assets.iframe;
         } catch (error) {
           setIsLoading(false);
-          showError(`Video yükleme hatası: ${error instanceof Error ? error.message : String(error)}`);
+          showError(`Video yükleme hatası: ${error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu.'}`);
+          console.error("Video upload error:", error);
           return;
         }
       }
