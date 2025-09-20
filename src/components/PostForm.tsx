@@ -5,11 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/supabase';
-import { showError, showSuccess, showLoading, dismissToast, updateToastError, updateToastLoading } from '@/utils/toast';
+import { showError, showSuccess, showLoading, updateToastError, updateToastLoading, updateToastSuccess } from '@/utils/toast';
 import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { MediaUploader } from './MediaUploader';
-import ApiVideoClient from '@api.video/browser-sdk';
+import { VideoUploader } from '@api.video/video-uploader';
 
 const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
 const API_VIDEO_KEY = 'YTMX7u744uGYqOWI0ab7uQLyhlmPh04FXFEpGDiMHFt';
@@ -101,22 +101,19 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
       } else if (mediaType === 'video') {
         const toastId = showLoading('Video yükleniyor...');
         try {
-          const client = new ApiVideoClient({ apiKey: API_VIDEO_KEY, basePath: API_VIDEO_BASE_URL });
-          
-          const video = await client.videos.upload(mediaFile, 
-            { title: `Gönderi - ${username}` }, 
-            {
-              onProgress(event) {
-                const percent = Math.round((event.uploadedBytes / event.totalBytes) * 100);
-                updateToastLoading(toastId, `Video yükleniyor... ${percent}%`);
-                console.log(`Video Yükleme: ${percent}%`);
-              },
-            }
-          );
-          
+          const uploader = new VideoUploader({
+            apiKey: API_VIDEO_KEY,
+            baseUri: API_VIDEO_BASE_URL,
+          });
+          const video = await uploader.upload(mediaFile, {
+            title: `Gönderi - ${username}`,
+            onProgress(event) {
+              const percent = Math.round((event.uploadedBytes / event.totalBytes) * 100);
+              updateToastLoading(toastId, `Video yükleniyor... ${percent}%`);
+            },
+          });
           uploadedVideoPlayerUrl = video.assets.iframe;
           updateToastSuccess(toastId, 'Video başarıyla yüklendi!');
-
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
           updateToastError(toastId, `Video yükleme hatası: ${errorMessage}`);
