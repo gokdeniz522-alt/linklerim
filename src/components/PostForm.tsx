@@ -14,9 +14,6 @@ const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
 const API_VIDEO_KEY = 'YTMX7u744uGYqOWI0ab7uQLyhlmPh04FXFEpGDiMHFt';
 const API_VIDEO_BASE_URL = 'https://sandbox.api.video';
 
-// Helper function to delay execution
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 interface PostFormProps {
   onPostCreated: () => void;
 }
@@ -103,7 +100,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
         }
       } else if (mediaType === 'video') {
         try {
-          // Step 1: Authenticate
+          // Step 1: Authenticate to get access token
           const authResponse = await fetch(`${API_VIDEO_BASE_URL}/auth/api-key`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -115,7 +112,10 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
           // Step 2: Create a video object
           const createVideoResponse = await fetch(`${API_VIDEO_BASE_URL}/videos`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${access_token}` },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${access_token}`,
+            },
             body: JSON.stringify({ title: mediaFile.name }),
           });
           if (!createVideoResponse.ok) throw new Error('api.video nesnesi oluşturulamadı.');
@@ -129,29 +129,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
             body: mediaFile,
           });
           if (!uploadResponse.ok) throw new Error('Video dosyası yüklenemedi.');
-
-          // Step 4: Poll for video status until it's playable
-          let isPlayable = false;
-          let finalVideoData;
-          const maxRetries = 20; // Try for 2 minutes (20 * 6s = 120s)
-          for (let i = 0; i < maxRetries; i++) {
-            const statusResponse = await fetch(`${API_VIDEO_BASE_URL}/videos/${videoId}/status`, {
-              headers: { 'Authorization': `Bearer ${access_token}` },
-            });
-            const statusData = await statusResponse.json();
-            if (statusData.encoding?.playable === true) {
-              isPlayable = true;
-              finalVideoData = await (await fetch(`${API_VIDEO_BASE_URL}/videos/${videoId}`, {
-                headers: { 'Authorization': `Bearer ${access_token}` },
-              })).json();
-              break;
-            }
-            await sleep(6000); // Wait 6 seconds before checking again
-          }
-
-          if (!isPlayable) {
-            throw new Error('Video işlenemedi veya zaman aşımına uğradı.');
-          }
+          const finalVideoData = await uploadResponse.json();
           
           uploadedVideoPlayerUrl = finalVideoData.assets.iframe;
 
