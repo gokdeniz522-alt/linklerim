@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { showError } from '@/utils/toast';
 
@@ -65,14 +64,24 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
 
           if (hasVoted) {
             return (
-              <div key={option.id} className="relative">
-                <Progress value={percentage} className="h-8" />
-                <div className={cn(
-                  "absolute inset-0 flex items-center justify-between px-3 text-sm text-primary-foreground ",
-                  isVotedOption ? "font-bold text-black " : "text-foreground text-primary-foreground"
-                )}>
-                  <span>{option.option_text}</span>
-                  <span>{Math.round(percentage)}% ({option.votes})</span>
+              <div
+                key={option.id}
+                className="relative w-full overflow-hidden rounded-md border bg-background p-2 text-sm"
+              >
+                <div
+                  className={cn(
+                    "absolute left-0 top-0 h-full bg-accent transition-all duration-500",
+                    isVotedOption && "bg-primary/20"
+                  )}
+                  style={{ width: `${percentage}%` }}
+                />
+                <div className="relative z-10 flex items-center justify-between gap-2">
+                  <span className={cn("font-medium", isVotedOption && "font-bold text-primary")}>
+                    {option.option_text}
+                  </span>
+                  <span className="flex-shrink-0 font-semibold text-muted-foreground">
+                    {Math.round(percentage)}% ({option.votes})
+                  </span>
                 </div>
               </div>
             );
@@ -81,7 +90,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
               <Button
                 key={option.id}
                 variant="outline"
-                className="w-full justify-start text-primary-foreground text-white"
+                className="w-full justify-start"
                 onClick={() => handleVote(option.id)}
               >
                 {option.option_text}
@@ -90,7 +99,7 @@ export const PollDisplay = ({ poll }: PollDisplayProps) => {
           }
         })}
       </div>
-      {votedOptionId && <p className="text-xs text-muted-foreground text-right ">{totalVotes} Toplam Oy</p>}
+      {votedOptionId && <p className="text-xs text-muted-foreground text-right">{totalVotes} Toplam Oy</p>}
     </div>
   );
 };
