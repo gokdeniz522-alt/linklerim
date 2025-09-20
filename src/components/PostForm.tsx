@@ -94,7 +94,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
 
     const { data: postData, error: postError } = await supabase
       .from('posts')
-      .insert([{ username, content, image_url: uploadedImageUrl, video_url: uploadedVideoUrl }])
+      .insert([{ username, content, image_url: uploadedImageUrl, video_player_url: uploadedVideoUrl }])
       .select().single();
 
     if (postError) {

@@ -28,7 +28,7 @@ export interface Post {
   username: string;
   content: string;
   image_url: string | null;
-  video_url: string | null; // video_player_url -> video_url olarak değiştirildi
+  video_player_url: string | null;
   polls: Poll[] | null;
 }
 
@@ -93,10 +93,10 @@ export const PostItem = ({ post }: PostItemProps) => {
             />
           </div>
         )}
-        {post.video_url && (
+        {post.video_player_url && (
           <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg border bg-black">
              <video
-              src={post.video_url}
+              src={post.video_player_url}
               width="100%"
               height="100%"
               controls
