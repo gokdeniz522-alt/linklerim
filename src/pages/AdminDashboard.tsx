@@ -54,47 +54,58 @@ const AdminDashboard = () => {
   const handleDelete = async () => {
     if (!postToDelete) return;
 
-    // 1. Yorumları sil
-    const { error: commentsError } = await supabase
-      .from('comments')
-      .delete()
-      .eq('post_id', postToDelete.id);
-
-    if (commentsError) {
-      showError('Gönderiye ait yorumlar silinemedi: ' + commentsError.message);
-      setPostToDelete(null);
-      return;
-    }
-
-    // 2. Anketleri ve anket seçeneklerini sil
+    // Adım 1: Gönderiye bağlı anketleri bul
     const { data: polls, error: pollsError } = await supabase
       .from('polls')
       .select('id')
       .eq('post_id', postToDelete.id);
 
     if (pollsError) {
-      showError('Gönderiye ait anketler bulunamadı: ' + pollsError.message);
+      showError('Anketler aranırken hata oluştu: ' + pollsError.message);
       setPostToDelete(null);
       return;
     }
 
+    // Adım 2: Anketler varsa, önce seçeneklerini sonra kendilerini sil
     if (polls && polls.length > 0) {
       const pollIds = polls.map(p => p.id);
       
       // Anket seçeneklerini sil
-      await supabase.from('poll_options').delete().in('poll_id', pollIds);
+      const { error: optionsError } = await supabase.from('poll_options').delete().in('poll_id', pollIds);
+      if (optionsError) {
+        showError('Anket seçenekleri silinemedi: ' + optionsError.message);
+        setPostToDelete(null);
+        return;
+      }
       
       // Anketleri sil
-      await supabase.from('polls').delete().in('id', pollIds);
+      const { error: pollDeleteError } = await supabase.from('polls').delete().in('id', pollIds);
+      if (pollDeleteError) {
+        showError('Anketler silinemedi: ' + pollDeleteError.message);
+        setPostToDelete(null);
+        return;
+      }
     }
 
-    // 3. Son olarak gönderiyi sil
+    // Adım 3: Gönderiye bağlı yorumları sil
+    const { error: commentsError } = await supabase
+      .from('comments')
+      .delete()
+      .eq('post_id', postToDelete.id);
+
+    if (commentsError) {
+      showError('Yorumlar silinemedi: ' + commentsError.message);
+      setPostToDelete(null);
+      return;
+    }
+
+    // Adım 4: Tüm bağlı veriler silindikten sonra gönderiyi sil
     const { error: postError } = await supabase.from('posts').delete().eq('id', postToDelete.id);
 
     if (postError) {
       showError('Gönderi silinemedi: ' + postError.message);
     } else {
-      showSuccess('Gönderi başarıyla silindi.');
+      showSuccess('Gönderi ve tüm ilişkili verileri başarıyla silindi.');
       setPosts(posts.filter(p => p.id !== postToDelete.id));
     }
     setPostToDelete(null);
@@ -154,7 +165,7 @@ const AdminDashboard = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
             <AlertDialogDescription>
-              Bu gönderiyi kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+              Bu gönderiyi ve ona bağlı tüm yorumları/anketleri kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
