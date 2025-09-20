@@ -133,20 +133,28 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
           // Step 4: Poll for video status until it's playable
           let isPlayable = false;
           let finalVideoData;
-          const maxRetries = 20; // Try for 2 minutes (20 * 6s = 120s)
+          const maxRetries = 50; // Try for 5 minutes (50 * 6s = 300s)
+          console.log(`[Video Upload] Polling for video status for videoId: ${videoId}. Will try up to ${maxRetries} times.`);
           for (let i = 0; i < maxRetries; i++) {
+            console.log(`[Video Upload] Polling attempt #${i + 1}...`);
             const statusResponse = await fetch(`${API_VIDEO_BASE_URL}/videos/${videoId}/status`, {
               headers: { 'Authorization': `Bearer ${access_token}` },
             });
             const statusData = await statusResponse.json();
+            console.log('[Video Upload] Received status:', statusData);
+
             if (statusData.encoding?.playable === true) {
+              console.log('[Video Upload] Video is now playable!');
               isPlayable = true;
               finalVideoData = await (await fetch(`${API_VIDEO_BASE_URL}/videos/${videoId}`, {
                 headers: { 'Authorization': `Bearer ${access_token}` },
               })).json();
               break;
             }
-            await sleep(6000); // Wait 6 seconds before checking again
+            
+            if (i < maxRetries - 1) {
+              await sleep(6000); // Wait 6 seconds before checking again
+            }
           }
 
           if (!isPlayable) {
