@@ -9,7 +9,7 @@ import { showError, showSuccess } from '@/utils/toast';
 import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { MediaUploader } from './MediaUploader';
-import { VideoUploader } from '@api.video/browser-sdk';
+import VideoUploader from '@api.video/video-uploader';
 
 const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
 const API_VIDEO_KEY = 'YTMX7u744uGYqOWI0ab7uQLyhlmPh04FXFEpGDiMHFt';
