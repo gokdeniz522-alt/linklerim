@@ -23,3 +23,7 @@ export const updateToastSuccess = (toastId: string | number, message: string) =>
 export const updateToastError = (toastId: string | number, message: string) => {
     toast.error(message, { id: toastId });
 }
+
+export const updateToastLoading = (toastId: string | number, message: string) => {
+    toast.loading(message, { id: toastId });
+}

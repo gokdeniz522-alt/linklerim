@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/supabase';
-import { showError, showSuccess, showLoading, dismissToast, updateToastError } from '@/utils/toast';
+import { showError, showSuccess, showLoading, dismissToast, updateToastError, updateToastLoading } from '@/utils/toast';
 import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { MediaUploader } from './MediaUploader';
@@ -117,7 +117,7 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
           if (!videoId) throw new Error('API\'den geçerli bir videoId alınamadı.');
 
           // Adım 2: Alınan videoId ile dosyayı yükle
-          toast.loading('Video yükleniyor...', { id: toastId });
+          updateToastLoading(toastId, 'Video yükleniyor...');
           const uploader = new VideoUploader({ apiKey: API_VIDEO_KEY, baseUri: API_VIDEO_BASE_URL });
           const video = await uploader.uploadWithVideoId(videoId, mediaFile, {
             onProgress(event) {
