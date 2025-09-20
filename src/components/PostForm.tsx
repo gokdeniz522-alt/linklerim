@@ -12,7 +12,7 @@ import { MediaUploader } from './MediaUploader';
 import { UploadClient } from '@uploadcare/upload-client';
 
 // LÜTFEN BURAYA KENDİ UPLOADCARE PUBLIC KEY'İNİZİ GİRİN
-const UPLOADCARE_PUBLIC_KEY = 'demopublickey'; // Örnek anahtar, kendi anahtarınızla değiştirin
+const UPLOADCARE_PUBLIC_KEY = 'demopublickey'; // <-- BU SATIRI KENDİ ANAHTARINIZLA DEĞİŞTİRDİĞİNİZDEN EMİN OLUN
 
 const uploadClient = new UploadClient({ publicKey: UPLOADCARE_PUBLIC_KEY });
 
