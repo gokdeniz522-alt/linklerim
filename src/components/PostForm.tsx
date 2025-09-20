@@ -9,7 +9,7 @@ import { showError, showSuccess, showLoading, dismissToast, updateToastError, up
 import { Loader2, Plus, Trash2, Vote } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { MediaUploader } from './MediaUploader';
-import { VideoUploader } from '@api.video/video-uploader';
+import ApiVideoClient from '@api.video/browser-sdk';
 
 const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
 const API_VIDEO_KEY = 'YTMX7u744uGYqOWI0ab7uQLyhlmPh04FXFEpGDiMHFt';
@@ -99,33 +99,23 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
           return;
         }
       } else if (mediaType === 'video') {
-        const toastId = showLoading('Video kaydı oluşturuluyor...');
+        const toastId = showLoading('Video yükleniyor...');
         try {
-          // Adım 1: Video nesnesi oluştur ve videoId al
-          const createResponse = await fetch(`${API_VIDEO_BASE_URL}/videos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_VIDEO_KEY}` },
-            body: JSON.stringify({ title: `Gönderi - ${username}` })
-          });
-
-          if (!createResponse.ok) {
-            const errorBody = await createResponse.json();
-            throw new Error(`Video kaydı oluşturulamadı: ${errorBody.title || 'API Hatası'}`);
-          }
-          const videoData = await createResponse.json();
-          const videoId = videoData.videoId;
-          if (!videoId) throw new Error('API\'den geçerli bir videoId alınamadı.');
-
-          // Adım 2: Alınan videoId ile dosyayı yükle
-          updateToastLoading(toastId, 'Video yükleniyor...');
-          const uploader = new VideoUploader({ apiKey: API_VIDEO_KEY, baseUri: API_VIDEO_BASE_URL });
-          const video = await uploader.uploadWithVideoId(videoId, mediaFile, {
-            onProgress(event) {
-              console.log(`Video Yükleme: ${Math.round((event.uploadedBytes / event.totalBytes) * 100)}%`);
-            },
-          });
+          const client = new ApiVideoClient({ apiKey: API_VIDEO_KEY, basePath: API_VIDEO_BASE_URL });
+          
+          const video = await client.videos.upload(mediaFile, 
+            { title: `Gönderi - ${username}` }, 
+            {
+              onProgress(event) {
+                const percent = Math.round((event.uploadedBytes / event.totalBytes) * 100);
+                updateToastLoading(toastId, `Video yükleniyor... ${percent}%`);
+                console.log(`Video Yükleme: ${percent}%`);
+              },
+            }
+          );
+          
           uploadedVideoPlayerUrl = video.assets.iframe;
-          dismissToast(toastId);
+          updateToastSuccess(toastId, 'Video başarıyla yüklendi!');
 
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
