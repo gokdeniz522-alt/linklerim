@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
-import { Loader2, Plus, Trash2, Vote, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, Plus, Trash2, Vote, XCircle, UploadCloud, File as FileIcon } from 'lucide-react';
 import { Separator } from './ui/separator';
-import { FileUploaderRegular } from '@uploadcare/react-uploader';
-import type { OutputFileEntry } from '@uploadcare/react-uploader';
 
-// Sizin sağladığınız Public Key kullanılıyor
-const UPLOADCARE_PUBLIC_KEY = '7c5f7d59601cdb95af16';
+// TODO: Bu API anahtarını https://api.imgbb.com/ adresinden aldığınız kendi anahtarınızla değiştirin.
+const IMGBB_API_KEY = 'BURAYA_KENDI_IMGBB_API_ANAHTARINIZI_YAPISTIRIN';
 
 interface PostFormProps {
   onPostCreated: () => void;
@@ -21,28 +19,25 @@ interface PostFormProps {
 export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [uploaderKey, setUploaderKey] = useState(Date.now());
 
   // Poll state
   const [isCreatingPoll, setIsCreatingPoll] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
 
-  const handleUploaderChange = (files: OutputFileEntry[]) => {
-    setUploadedImageUrl(null);
-    if (files.length > 0) {
-      const file = files[0];
-      if (file.status === 'success' && file.cdnUrl) {
-        setUploadedImageUrl(file.cdnUrl);
-      }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
     }
   };
 
   const handleRemoveMedia = () => {
-    setUploadedImageUrl(null);
-    setUploaderKey(Date.now());
+    setSelectedFile(null);
+    // Reset file input value
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
   };
 
   const handleAddOption = () => {
@@ -66,11 +61,12 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const resetForm = () => {
     setUsername('');
     setContent('');
-    setUploadedImageUrl(null);
+    setSelectedFile(null);
     setIsCreatingPoll(false);
     setPollQuestion('');
     setPollOptions(['', '']);
-    setUploaderKey(Date.now());
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,12 +79,41 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
       showError('Anket sorusu ve tüm seçenekler dolu olmalıdır.');
       return;
     }
+    if (IMGBB_API_KEY === 'BURAYA_KENDI_IMGBB_API_ANAHTARINIZI_YAPISTIRIN') {
+        showError('Lütfen PostForm.tsx dosyasındaki IMGBB_API_KEY değerini güncelleyin.');
+        return;
+    }
 
     setIsLoading(true);
+    let imageUrl: string | null = null;
+
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append('key', IMGBB_API_KEY);
+      formData.append('image', selectedFile);
+
+      try {
+        const response = await fetch('https://api.imgbb.com/1/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          imageUrl = result.data.url;
+        } else {
+          throw new Error(result.error?.message || 'Resim yüklenirken bir hata oluştu.');
+        }
+      } catch (error) {
+        showError(error instanceof Error ? error.message : 'Resim yüklenemedi.');
+        setIsLoading(false);
+        return;
+      }
+    }
 
     const { data: postData, error: postError } = await supabase
       .from('posts')
-      .insert([{ username, content, image_url: uploadedImageUrl }])
+      .insert([{ username, content, image_url: imageUrl }])
       .select().single();
 
     if (postError) {
@@ -122,8 +147,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
     onPostCreated();
   };
 
-  const hasMedia = !!uploadedImageUrl;
-
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
@@ -141,26 +164,24 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
           </div>
           <div className="space-y-2">
             <Label>Resim veya GIF Yükle (İsteğe Bağlı)</Label>
-            {hasMedia ? (
+            {selectedFile ? (
               <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
-                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span>Resim başarıyla eklendi.</span>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                  <FileIcon className="h-5 w-5 flex-shrink-0" />
+                  <span className="truncate flex-1">{selectedFile.name}</span>
                 </div>
                 <Button type="button" variant="ghost" size="icon" onClick={handleRemoveMedia}>
                   <XCircle className="h-5 w-5 text-muted-foreground" />
                 </Button>
               </div>
             ) : (
-              <FileUploaderRegular
-                key={uploaderKey}
-                pubkey={UPLOADCARE_PUBLIC_KEY}
-                maxFiles={1}
-                imgOnly={true}
-                sourceList="local, url, camera, dropbox, gdrive"
-                onChange={handleUploaderChange}
-                classNameUploader="uc-light"
-              />
+              <div>
+                <Label htmlFor="file-upload" className="relative flex flex-col items-center justify-center w-full py-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
+                  <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                  <p className="mt-2 text-sm text-muted-foreground">Bir dosya seçin</p>
+                </Label>
+                <Input id="file-upload" type="file" className="hidden" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} />
+              </div>
             )}
           </div>
           
