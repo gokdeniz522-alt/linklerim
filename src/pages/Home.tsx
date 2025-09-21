@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -6,13 +6,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@supabase/supabase-js';
-import { Eye, Loader2, PlusCircle, Save, Trash2, Upload } from 'lucide-react';
+import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getFaviconUrl } from '@/utils/favicon'; // Favicon yardımcı fonksiyonunu import ediyoruz
+import { getFaviconUrl } from '@/utils/favicon';
+import { cn } from '@/lib/utils';
 
 interface LinkType {
   id: number;
@@ -20,7 +21,7 @@ interface LinkType {
   url: string;
   created_at: string;
   click_count: number;
-  favicon_url: string | null; // Yeni eklenen alan
+  favicon_url: string | null;
 }
 
 const Home = () => {
@@ -45,6 +46,7 @@ const Home = () => {
   const [profileHeaderImageUrl, setProfileHeaderImageUrl] = useState<string | null>(null);
   const [isUploadingProfileHeader, setIsUploadingProfileHeader] = useState(false);
 
+  const profileHeaderImageInputRef = useRef<HTMLInputElement>(null);
 
   const navigate = useNavigate();
 
@@ -110,6 +112,7 @@ const Home = () => {
   const handleProfileHeaderImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setProfileHeaderImageFile(event.target.files[0]);
+      handleProfileHeaderImageUpload(event.target.files[0]); // Dosya seçildiğinde otomatik yükle
     }
   };
 
@@ -168,12 +171,12 @@ const Home = () => {
     }
   };
 
-  const handleProfileHeaderImageUpload = async () => {
-    if (!profileHeaderImageFile || !user) return;
+  const handleProfileHeaderImageUpload = async (fileToUpload: File | null = profileHeaderImageFile) => {
+    if (!fileToUpload || !user) return;
 
     setIsUploadingProfileHeader(true);
     try {
-      const newProfileHeaderImageUrl = await uploadImageToImgBB(profileHeaderImageFile);
+      const newProfileHeaderImageUrl = await uploadImageToImgBB(fileToUpload);
       setProfileHeaderImageUrl(newProfileHeaderImageUrl);
       showSuccess('Profil başlık resmi başarıyla yüklendi! Kaydetmeyi unutmayın.');
     } catch (error: any) {
@@ -241,10 +244,10 @@ const Home = () => {
     if (!user) return;
 
     setIsSubmitting(true);
-    const favicon_url = getFaviconUrl(newLinkUrl); // Favicon URL'sini çekiyoruz
+    const favicon_url = getFaviconUrl(newLinkUrl);
     const { data, error } = await supabase
       .from('links')
-      .insert([{ title: newLinkTitle, url: newLinkUrl, user_id: user.id, favicon_url: favicon_url }]) // Favicon URL'sini kaydediyoruz
+      .insert([{ title: newLinkTitle, url: newLinkUrl, user_id: user.id, favicon_url: favicon_url }])
       .select()
       .single();
 
@@ -292,22 +295,56 @@ const Home = () => {
         <Card>
           <CardHeader>
             <CardTitle>Profil Ayarları</CardTitle>
-            <CardDescription>Profil resminizi ve açıklamanızı güncelleyin.</CardDescription>
+            <CardDescription>Profil resminizi, başlık görselinizi ve açıklamanızı güncelleyin.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={avatarUrl || `https://api.dicebear.com/8.x/initials/svg?seed=${username}`} alt={username || ''} />
-                <AvatarFallback>{username?.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="picture">Profil Resmi</Label>
-                <Input id="picture" type="file" accept="image/*" onChange={handleAvatarFileChange} />
-                <Button onClick={handleAvatarUpload} disabled={!selectedFile || isUploading} size="sm" className="mt-2">
-                  {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                  Yükle
-                </Button>
+            <div 
+              className="relative w-full h-40 bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer group"
+              style={profileHeaderImageUrl ? { backgroundImage: `url(${profileHeaderImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+              onClick={() => profileHeaderImageInputRef.current?.click()}
+            >
+              <input 
+                id="profile-header-image" 
+                type="file" 
+                accept="image/*" 
+                onChange={handleProfileHeaderImageFileChange} 
+                className="hidden"
+                ref={profileHeaderImageInputRef}
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-25 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="h-8 w-8 text-white" />
               </div>
+              <div className="absolute bottom-4 left-4 flex items-center gap-4">
+                <Avatar className="w-24 h-24 border-4 border-white dark:border-gray-800">
+                  <AvatarImage src={avatarUrl || `https://api.dicebear.com/8.x/initials/svg?seed=${username}`} alt={username || ''} />
+                  <AvatarFallback>{username?.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col text-white text-shadow-sm">
+                  <h3 className="text-xl font-bold">{username}</h3>
+                  <p className="text-sm">{bio || 'Biyografi yok.'}</p>
+                </div>
+              </div>
+              {profileHeaderImageUrl && (
+                <Button 
+                  onClick={(e) => { e.stopPropagation(); handleRemoveProfileHeaderImage(); }} 
+                  disabled={isSavingProfile} 
+                  variant="destructive" 
+                  size="sm" 
+                  className="absolute top-4 right-4"
+                >
+                  {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                  Kaldır
+                </Button>
+              )}
+            </div>
+
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="picture">Profil Resmi</Label>
+              <Input id="picture" type="file" accept="image/*" onChange={handleAvatarFileChange} />
+              <Button onClick={handleAvatarUpload} disabled={!selectedFile || isUploading} size="sm" className="mt-2">
+                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                Yükle
+              </Button>
             </div>
             <div className="space-y-2">
               <Label htmlFor="bio">Profil Açıklaması (Bio)</Label>
@@ -382,43 +419,6 @@ const Home = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Profil Başlık Resmi</CardTitle>
-            <CardDescription>Profil resminizin arkasında görünecek bir görsel yükleyin.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="profile-header-image">Başlık Resmi</Label>
-              <Input id="profile-header-image" type="file" accept="image/*" onChange={handleProfileHeaderImageFileChange} />
-              <div className="flex gap-2 mt-2">
-                <Button onClick={handleProfileHeaderImageUpload} disabled={!profileHeaderImageFile || isUploadingProfileHeader} size="sm">
-                  {isUploadingProfileHeader ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                  Resmi Yükle
-                </Button>
-                {profileHeaderImageUrl && (
-                  <Button onClick={handleRemoveProfileHeaderImage} disabled={isSavingProfile} variant="destructive" size="sm">
-                    {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                    Kaldır
-                  </Button>
-                )}
-              </div>
-              {profileHeaderImageUrl && (
-                <div className="mt-2">
-                  <p className="text-sm text-muted-foreground">Mevcut Başlık Resmi:</p>
-                  <img src={profileHeaderImageUrl} alt="Başlık Resmi Önizlemesi" className="w-full h-32 object-cover rounded-md mt-1" />
-                </div>
-              )}
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
-              {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              Değişiklikleri Kaydet
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
             <CardTitle>Yeni Link Ekle</CardTitle>
             <CardDescription>Paylaşmak istediğiniz linkin bilgilerini girin.</CardDescription>
           </CardHeader>
@@ -449,7 +449,7 @@ const Home = () => {
               links.map(link => (
                 <Card key={link.id}>
                   <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3"> {/* Favicon için boşluk ekledik */}
+                    <div className="flex items-center gap-3">
                       {link.favicon_url && (
                         <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
                       )}
