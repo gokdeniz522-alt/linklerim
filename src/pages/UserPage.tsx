@@ -7,6 +7,8 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { cn } from '@/lib/utils';
 import { getYouTubeVideoId } from '@/utils/youtube';
+import { Button } from '@/components/ui/button';
+import { PlayCircle } from 'lucide-react';
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
 type Layout = 'default' | 'sidebar-left' | 'modern-cover';
@@ -36,22 +38,22 @@ interface Link {
 }
 
 const YouTubePlayer = ({ videoId, visibility, position }: { videoId: string; visibility: YouTubeVisibility; position: YouTubePosition }) => {
-  // Güvenilir otomatik oynatma için mute=1 ve kullanıcı etkileşimi için controls=1 olarak güncellendi.
-  const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}`;
+  // Sesli otomatik oynatma için mute=0, kontrolleri gizlemek için controls=0
+  const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}`;
   
   if (visibility === 'hidden') {
     return (
       <iframe
         className="absolute w-0 h-0 border-0 -z-10"
-        src={src.replace('controls=1', 'controls=0')} // Gizli modda kontrollere gerek yok
+        src={src}
         title="YouTube audio player"
-        allow="autoplay"
+        allow="autoplay; encrypted-media"
       ></iframe>
     );
   }
 
   const positionClasses = {
-    default: 'w-full aspect-video rounded-lg shadow-lg mt-8', // Linklerden sonra gelmesi için mt-8 eklendi
+    default: 'w-full aspect-video rounded-lg shadow-lg mt-8',
     background: 'fixed top-0 left-0 w-full h-full -z-10 object-cover',
     'bottom-right': 'fixed bottom-4 right-4 w-80 h-44 rounded-lg shadow-2xl z-50',
   };
@@ -77,6 +79,7 @@ const UserPage = () => {
   const [links, setLinks] = useState<Link[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userInteracted, setUserInteracted] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -297,7 +300,7 @@ const UserPage = () => {
   );
 
   const renderLayout = () => {
-    const defaultVideoPlayer = videoId && profile?.youtube_position === 'default' && (
+    const defaultVideoPlayer = videoId && profile?.youtube_position === 'default' && userInteracted && (
       <YouTubePlayer videoId={videoId} visibility={profile.youtube_visibility} position="default" />
     );
 
@@ -341,7 +344,20 @@ const UserPage = () => {
       className={cn("flex flex-col min-h-screen", pageForcedClasses)}
       style={pageBackgroundStyle}
     >
-      {isFixedPositionVideo && <YouTubePlayer videoId={videoId} visibility={profile.youtube_visibility} position={profile.youtube_position} />}
+      {videoId && !userInteracted && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm cursor-pointer"
+          onClick={() => setUserInteracted(true)}
+        >
+          <Button variant="ghost" size="lg" className="text-white text-xl h-auto flex-col gap-2">
+            <PlayCircle className="h-16 w-16" />
+            Müziği Başlat
+          </Button>
+        </div>
+      )}
+
+      {userInteracted && isFixedPositionVideo && <YouTubePlayer videoId={videoId} visibility={profile.youtube_visibility} position={profile.youtube_position} />}
+      
       <div className="absolute top-8 right-8 z-10">
         <ThemeToggle />
       </div>
