@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { cn } from '@/lib/utils';
+import { getFaviconUrl } from '@/utils/favicon'; // Favicon yardımcı fonksiyonunu import ediyoruz
 
 interface Profile {
   id: string;
@@ -14,13 +15,14 @@ interface Profile {
   bio: string | null;
   background_type: 'none' | 'color' | 'image';
   background_value: string | null;
-  profile_header_image_url: string | null; // Yeni eklenen alan
+  profile_header_image_url: string | null;
 }
 
 interface Link {
   id: number;
   title: string;
   url: string;
+  favicon_url: string | null; // Yeni eklenen alan
 }
 
 const UserPage = () => {
@@ -39,7 +41,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url') // Yeni alanı seçiyoruz
+        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url')
         .eq('username', username)
         .single();
 
@@ -52,7 +54,7 @@ const UserPage = () => {
 
       const { data: linksData, error: linksError } = await supabase
         .from('links')
-        .select('id, title, url')
+        .select('id, title, url, favicon_url') // Favicon URL'sini seçiyoruz
         .eq('user_id', profileData.id)
         .order('created_at', { ascending: false });
 
@@ -156,7 +158,10 @@ const UserPage = () => {
                 onClick={() => handleLinkClick(link.id)}
               >
                 <Card className="hover:bg-muted transition-colors">
-                  <CardContent className="p-4 text-center">
+                  <CardContent className="p-4 text-center flex items-center justify-center gap-3"> {/* Favicon için boşluk ekledik */}
+                    {link.favicon_url && (
+                      <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
+                    )}
                     <p className="font-semibold text-lg">{link.title}</p>
                   </CardContent>
                 </Card>

@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getFaviconUrl } from '@/utils/favicon'; // Favicon yardımcı fonksiyonunu import ediyoruz
 
 interface LinkType {
   id: number;
@@ -19,6 +20,7 @@ interface LinkType {
   url: string;
   created_at: string;
   click_count: number;
+  favicon_url: string | null; // Yeni eklenen alan
 }
 
 const Home = () => {
@@ -239,9 +241,10 @@ const Home = () => {
     if (!user) return;
 
     setIsSubmitting(true);
+    const favicon_url = getFaviconUrl(newLinkUrl); // Favicon URL'sini çekiyoruz
     const { data, error } = await supabase
       .from('links')
-      .insert([{ title: newLinkTitle, url: newLinkUrl, user_id: user.id }])
+      .insert([{ title: newLinkTitle, url: newLinkUrl, user_id: user.id, favicon_url: favicon_url }]) // Favicon URL'sini kaydediyoruz
       .select()
       .single();
 
@@ -446,11 +449,16 @@ const Home = () => {
               links.map(link => (
                 <Card key={link.id}>
                   <CardContent className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{link.title}</p>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline">
-                        {link.url}
-                      </a>
+                    <div className="flex items-center gap-3"> {/* Favicon için boşluk ekledik */}
+                      {link.favicon_url && (
+                        <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
+                      )}
+                      <div>
+                        <p className="font-semibold">{link.title}</p>
+                        <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline">
+                          {link.url}
+                        </a>
+                      </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
