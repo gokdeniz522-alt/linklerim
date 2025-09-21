@@ -34,7 +34,7 @@ interface Link {
 }
 
 const YouTubePlayer = ({ videoId, visibility }: { videoId: string; visibility: YouTubeVisibility }) => {
-  const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`;
+  const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=0;
   
   const playerClasses = visibility === 'visible' 
     ? 'w-full aspect-video rounded-lg shadow-lg mb-8' 
