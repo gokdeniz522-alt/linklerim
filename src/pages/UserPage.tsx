@@ -36,21 +36,22 @@ interface Link {
 }
 
 const YouTubePlayer = ({ videoId, visibility, position }: { videoId: string; visibility: YouTubeVisibility; position: YouTubePosition }) => {
-  const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}`;
+  // Güvenilir otomatik oynatma için mute=1 ve kullanıcı etkileşimi için controls=1 olarak güncellendi.
+  const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}`;
   
   if (visibility === 'hidden') {
     return (
       <iframe
         className="absolute w-0 h-0 border-0 -z-10"
-        src={src}
-        title="YouTube video player"
+        src={src.replace('controls=1', 'controls=0')} // Gizli modda kontrollere gerek yok
+        title="YouTube audio player"
         allow="autoplay"
       ></iframe>
     );
   }
 
   const positionClasses = {
-    default: 'w-full aspect-video rounded-lg shadow-lg mb-8',
+    default: 'w-full aspect-video rounded-lg shadow-lg mt-8', // Linklerden sonra gelmesi için mt-8 eklendi
     background: 'fixed top-0 left-0 w-full h-full -z-10 object-cover',
     'bottom-right': 'fixed bottom-4 right-4 w-80 h-44 rounded-lg shadow-2xl z-50',
   };
@@ -296,12 +297,17 @@ const UserPage = () => {
   );
 
   const renderLayout = () => {
+    const defaultVideoPlayer = videoId && profile?.youtube_position === 'default' && (
+      <YouTubePlayer videoId={videoId} visibility={profile.youtube_visibility} position="default" />
+    );
+
     switch (layout) {
       case 'modern-cover':
         return (
           <div className="max-w-2xl mx-auto">
             <ProfileSectionModernCover />
             <LinksSection />
+            {defaultVideoPlayer}
           </div>
         );
       case 'sidebar-left':
@@ -312,6 +318,7 @@ const UserPage = () => {
             </div>
             <div className="md:col-span-2">
               <LinksSection />
+              {defaultVideoPlayer}
             </div>
           </div>
         );
@@ -321,17 +328,20 @@ const UserPage = () => {
           <div className="max-w-2xl mx-auto">
             <ProfileSectionDefault />
             <LinksSection />
+            {defaultVideoPlayer}
           </div>
         );
     }
   };
+  
+  const isFixedPositionVideo = videoId && profile && (profile.youtube_position === 'background' || profile.youtube_position === 'bottom-right');
 
   return (
     <div 
       className={cn("flex flex-col min-h-screen", pageForcedClasses)}
       style={pageBackgroundStyle}
     >
-      {videoId && <YouTubePlayer videoId={videoId} visibility={profile!.youtube_visibility} position={profile!.youtube_position} />}
+      {isFixedPositionVideo && <YouTubePlayer videoId={videoId} visibility={profile.youtube_visibility} position={profile.youtube_position} />}
       <div className="absolute top-8 right-8 z-10">
         <ThemeToggle />
       </div>
