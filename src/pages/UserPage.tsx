@@ -6,7 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { cn } from '@/lib/utils';
-import { getFaviconUrl } from '@/utils/favicon'; // Favicon yardımcı fonksiyonunu import ediyoruz
+
+type Theme = 'default' | 'minimalist' | 'glass';
 
 interface Profile {
   id: string;
@@ -16,13 +17,14 @@ interface Profile {
   background_type: 'none' | 'color' | 'image';
   background_value: string | null;
   profile_header_image_url: string | null;
+  theme: Theme;
 }
 
 interface Link {
   id: number;
   title: string;
   url: string;
-  favicon_url: string | null; // Yeni eklenen alan
+  favicon_url: string | null;
 }
 
 const UserPage = () => {
@@ -41,7 +43,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url')
+        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme')
         .eq('username', username)
         .single();
 
@@ -54,7 +56,7 @@ const UserPage = () => {
 
       const { data: linksData, error: linksError } = await supabase
         .from('links')
-        .select('id, title, url, favicon_url') // Favicon URL'sini seçiyoruz
+        .select('id, title, url, favicon_url')
         .eq('user_id', profileData.id)
         .order('created_at', { ascending: false });
 
@@ -105,7 +107,7 @@ const UserPage = () => {
     pageBackgroundStyle.backgroundSize = 'cover';
     pageBackgroundStyle.backgroundPosition = 'center';
     pageBackgroundStyle.backgroundRepeat = 'no-repeat';
-    pageTextColorClass = 'text-white'; // Arka plan resimse metin rengini beyaz yap
+    pageTextColorClass = 'text-white';
   }
 
   const headerBackgroundStyle: React.CSSProperties = {};
@@ -116,8 +118,23 @@ const UserPage = () => {
     headerBackgroundStyle.backgroundSize = 'cover';
     headerBackgroundStyle.backgroundPosition = 'center';
     headerBackgroundStyle.backgroundRepeat = 'no-repeat';
-    headerTextColorClass = 'text-white'; // Başlık resmi varsa metin rengini beyaz yap
+    headerTextColorClass = 'text-white';
   }
+
+  // Tema stilleri
+  const theme = profile?.theme || 'default';
+  const themeClasses = {
+    linkCard: {
+      default: 'hover:bg-muted transition-colors rounded-lg',
+      minimalist: 'border bg-background hover:bg-muted transition-colors rounded-none',
+      glass: 'bg-white/20 backdrop-blur-lg border border-white/30 rounded-lg text-white hover:bg-white/30 transition-colors',
+    },
+    linkContent: {
+      default: 'p-4 text-center flex items-center justify-center gap-3',
+      minimalist: 'p-4 text-center flex items-center justify-center gap-3',
+      glass: 'p-4 text-center flex items-center justify-center gap-3',
+    },
+  };
 
   return (
     <div 
@@ -130,9 +147,10 @@ const UserPage = () => {
         </div>
         <header 
           className={cn(
-            "flex flex-col items-center text-center mb-8 p-6 rounded-lg",
+            "flex flex-col items-center text-center mb-8 p-6",
             headerTextColorClass,
-            profile?.profile_header_image_url ? 'bg-gray-800 bg-opacity-50' : '' // Resim varsa hafif bir overlay ekleyebiliriz
+            theme === 'default' && 'rounded-lg',
+            profile?.profile_header_image_url ? 'bg-gray-800 bg-opacity-50' : ''
           )}
           style={headerBackgroundStyle}
         >
@@ -157,8 +175,8 @@ const UserPage = () => {
                 className="block"
                 onClick={() => handleLinkClick(link.id)}
               >
-                <Card className="hover:bg-muted transition-colors">
-                  <CardContent className="p-4 text-center flex items-center justify-center gap-3"> {/* Favicon için boşluk ekledik */}
+                <Card className={cn(themeClasses.linkCard[theme])}>
+                  <CardContent className={cn(themeClasses.linkContent[theme])}>
                     {link.favicon_url && (
                       <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
                     )}

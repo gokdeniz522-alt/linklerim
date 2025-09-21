@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@supabase/supabase-js';
-import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera } from 'lucide-react';
+import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera, Palette } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -23,6 +23,14 @@ interface LinkType {
   click_count: number;
   favicon_url: string | null;
 }
+
+type Theme = 'default' | 'minimalist' | 'glass';
+
+const themes: { id: Theme; name: string; description: string }[] = [
+  { id: 'default', name: 'Varsayılan', description: 'Modern ve yuvarlak hatlı standart tema.' },
+  { id: 'minimalist', name: 'Minimalist', description: 'Sade, gölgesiz ve keskin hatlı bir görünüm.' },
+  { id: 'glass', name: 'Cam Efekti', description: 'Arka plan resmiyle en iyi çalışan, şeffaf ve modern bir tema.' },
+];
 
 const Home = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -45,6 +53,7 @@ const Home = () => {
   const [profileHeaderImageFile, setProfileHeaderImageFile] = useState<File | null>(null);
   const [profileHeaderImageUrl, setProfileHeaderImageUrl] = useState<string | null>(null);
   const [isUploadingProfileHeader, setIsUploadingProfileHeader] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<Theme>('default');
 
   const profileHeaderImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,7 +68,7 @@ const Home = () => {
         setUser(user);
         
         const [profileResponse, linksResponse] = await Promise.all([
-          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url').eq('id', user.id).single(),
+          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme').eq('id', user.id).single(),
           supabase.from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
         ]);
 
@@ -76,6 +85,7 @@ const Home = () => {
             setBackgroundImageUrl(profileResponse.data.background_value);
           }
           setProfileHeaderImageUrl(profileResponse.data.profile_header_image_url);
+          setSelectedTheme(profileResponse.data.theme || 'default');
         }
 
         if (linksResponse.error) {
@@ -223,7 +233,8 @@ const Home = () => {
         bio: bio,
         background_type: backgroundType,
         background_value: backgroundValueToSave,
-        profile_header_image_url: profileHeaderImageUrl
+        profile_header_image_url: profileHeaderImageUrl,
+        theme: selectedTheme,
       })
       .eq('id', user.id);
 
@@ -355,6 +366,36 @@ const Home = () => {
             <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
               {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Değişiklikleri Kaydet
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tasarım Ayarları</CardTitle>
+            <CardDescription>Herkese açık profil sayfanızın görünümünü seçin.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {themes.map((theme) => (
+                <div
+                  key={theme.id}
+                  className={cn(
+                    'p-4 border rounded-lg cursor-pointer transition-all',
+                    selectedTheme === theme.id ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
+                  )}
+                  onClick={() => setSelectedTheme(theme.id)}
+                >
+                  <h3 className="font-semibold">{theme.name}</h3>
+                  <p className="text-sm text-muted-foreground">{theme.description}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Tasarımı Kaydet
             </Button>
           </CardFooter>
         </Card>
