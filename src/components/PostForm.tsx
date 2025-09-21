@@ -1,16 +1,15 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
-import { Loader2, Plus, Trash2, Vote, X, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Plus, Trash2, Vote, XCircle, UploadCloud, File as FileIcon } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 // TODO: Bu API anahtarını https://api.imgbb.com/ adresinden aldığınız kendi anahtarınızla değiştirin.
 const IMGBB_API_KEY = '0b87ea4254783f6f403eaf07eb33b76d';
@@ -23,7 +22,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [username, setUsername] = useState('');
   const [content, setContent] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Poll state
@@ -31,23 +29,13 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
 
-  useEffect(() => {
-    if (!selectedFile) {
-      setPreview(null);
-      return;
-    }
-    const objectUrl = URL.createObjectURL(selectedFile);
-    setPreview(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [selectedFile]);
-
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles.length > 0) {
       setSelectedFile(acceptedFiles[0]);
     }
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'image/png': ['.png'],
@@ -55,8 +43,6 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
       'image/gif': ['.gif'],
     },
     multiple: false,
-    noClick: true,
-    noKeyboard: true,
   });
 
   const handleRemoveMedia = () => {
@@ -169,91 +155,90 @@ export const PostForm = ({ onPostCreated }: PostFormProps) => {
   };
 
   return (
-    <Card {...getRootProps()} className={cn("w-full max-w-2xl transition-colors", isDragActive && "outline-dashed outline-2 outline-primary")}>
-      <input {...getInputProps()} />
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <CardTitle>Yeni Gönderi Paylaş</CardTitle>
+      </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-4">
-            <Avatar className="mt-2">
-              <AvatarFallback>{username.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
-            </Avatar>
-            <div className="w-full space-y-2">
-              <Input 
-                placeholder="Kullanıcı Adınız" 
-                className="border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base font-semibold p-0 h-auto bg-transparent"
-                value={username} 
-                onChange={(e) => setUsername(e.target.value)} 
-                required 
-              />
-              <Textarea 
-                placeholder="Ne düşünüyorsunuz?" 
-                className="w-full border-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base p-0 min-h-[80px] bg-transparent"
-                value={content} 
-                onChange={(e) => setContent(e.target.value)} 
-                required 
-              />
-            </div>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username">Kullanıcı Adı</Label>
+            <Input id="username" placeholder="Kullanıcı adınızı girin..." value={username} onChange={(e) => setUsername(e.target.value)} required />
           </div>
-
-          {preview && (
-            <div className="mt-4 pl-16 relative">
-              <img src={preview} alt="Önizleme" className="rounded-lg max-h-80 w-auto border" />
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="icon" 
-                className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full h-7 w-7"
-                onClick={handleRemoveMedia}
+          <div className="space-y-2">
+            <Label htmlFor="content">Gönderiniz</Label>
+            <Textarea id="content" placeholder="Ne düşünüyorsunuz?" value={content} onChange={(e) => setContent(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <Label>Resim veya GIF Yükle (İsteğe Bağlı)</Label>
+            {selectedFile ? (
+              <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                  <FileIcon className="h-5 w-5 flex-shrink-0" />
+                  <span className="truncate flex-1">{selectedFile.name}</span>
+                </div>
+                <Button type="button" variant="ghost" size="icon" onClick={handleRemoveMedia}>
+                  <XCircle className="h-5 w-5 text-muted-foreground" />
+                </Button>
+              </div>
+            ) : (
+              <div 
+                {...getRootProps()} 
+                className={cn(
+                  "relative flex flex-col items-center justify-center w-full py-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors",
+                  isDragActive && "border-primary bg-primary/10"
+                )}
               >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+                <input {...getInputProps()} />
+                <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                {isDragActive ? (
+                  <p className="mt-2 text-sm text-primary">Dosyayı buraya bırakın</p>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">Sürükleyip bırakın veya seçmek için tıklayın</p>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <Separator />
 
-          {isCreatingPoll && (
-            <div className="mt-4 pl-16 space-y-4">
-              <Separator />
+          {isCreatingPoll ? (
+            <div className="space-y-4">
               <div>
-                <Label htmlFor="poll-question" className="font-semibold">Anket Sorusu</Label>
-                <Input id="poll-question" placeholder="Anket sorunuz..." value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} className="mt-2" />
+                <Label htmlFor="poll-question">Anket Sorusu</Label>
+                <Input id="poll-question" placeholder="Anket sorunuz..." value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label className="font-semibold">Seçenekler</Label>
+                <Label>Seçenekler</Label>
                 {pollOptions.map((option, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <Input placeholder={`Seçenek ${index + 1}`} value={option} onChange={(e) => handleOptionChange(index, e.target.value)} />
                     <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveOption(index)} disabled={pollOptions.length <= 2}>
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between">
                 <Button type="button" variant="outline" size="sm" onClick={handleAddOption} disabled={pollOptions.length >= 5}>
                   <Plus className="mr-2 h-4 w-4" /> Seçenek Ekle
                 </Button>
+                <Button type="button" variant="destructive" size="sm" onClick={() => setIsCreatingPoll(false)}>
+                  Anketi İptal Et
+                </Button>
               </div>
             </div>
-          )}
-
-          <Separator className="my-4" />
-
-          <div className="flex items-center justify-between pl-16">
-            <div className="flex items-center gap-1">
-              <Button type="button" variant="ghost" size="icon" className="rounded-full" onClick={open}>
-                <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                <span className="sr-only">Resim Yükle</span>
-              </Button>
-              <Button type="button" variant="ghost" size="icon" className="rounded-full" onClick={() => setIsCreatingPoll(!isCreatingPoll)}>
-                <Vote className="h-5 w-5 text-muted-foreground" />
-                <span className="sr-only">Anket Oluştur</span>
-              </Button>
-            </div>
-            <Button type="submit" disabled={isLoading} className="rounded-full font-bold px-6">
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Paylaş'}
+          ) : (
+            <Button type="button" variant="outline" className="w-full" onClick={() => setIsCreatingPoll(true)}>
+              <Vote className="mr-2 h-4 w-4" /> Anket Oluştur
             </Button>
-          </div>
+          )}
         </CardContent>
+        <CardFooter>
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Paylaş'}
+          </Button>
+        </CardFooter>
       </form>
     </Card>
   );
