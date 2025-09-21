@@ -10,7 +10,7 @@ const LandingPage = () => {
       {/* Header */}
       <header className="container mx-auto py-4 px-4 flex justify-between items-center z-10">
         <Link to="/" className="text-xl font-bold">
-          LinkHub
+          Linkkoy
         </Link>
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost">
