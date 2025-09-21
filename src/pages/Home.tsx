@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@supabase/supabase-js';
-import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera, Palette } from 'lucide-react';
+import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera, Palette, Layout as LayoutIcon, PanelLeft } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -25,6 +25,7 @@ interface LinkType {
 }
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
+type Layout = 'default' | 'sidebar-left';
 
 const themes: { id: Theme; name: string; description: string }[] = [
   { id: 'default', name: 'Varsayılan', description: 'Modern ve yuvarlak hatlı standart tema.' },
@@ -32,6 +33,11 @@ const themes: { id: Theme; name: string; description: string }[] = [
   { id: 'glass', name: 'Cam Efekti', description: 'Arka plan resmiyle en iyi çalışan, şeffaf ve modern bir tema.' },
   { id: 'neon', name: 'Neon', description: 'Karanlık modda parlayan, canlı renklere sahip fütüristik bir tema.' },
   { id: 'retro', name: 'Retro Terminal', description: 'Eski bilgisayar terminallerini andıran, nostaljik bir görünüm.' },
+];
+
+const layouts: { id: Layout; name: string; description: string; icon: React.ElementType }[] = [
+    { id: 'default', name: 'Varsayılan', description: 'Profil bilgileri sayfanın üst kısmında yer alır.', icon: LayoutIcon },
+    { id: 'sidebar-left', name: 'Kenar Çubuğu', description: 'Profil bilgileri solda, linkler sağda listelenir.', icon: PanelLeft },
 ];
 
 const Home = () => {
@@ -56,6 +62,7 @@ const Home = () => {
   const [profileHeaderImageUrl, setProfileHeaderImageUrl] = useState<string | null>(null);
   const [isUploadingProfileHeader, setIsUploadingProfileHeader] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<Theme>('default');
+  const [selectedLayout, setSelectedLayout] = useState<Layout>('default');
 
   const profileHeaderImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,7 +77,7 @@ const Home = () => {
         setUser(user);
         
         const [profileResponse, linksResponse] = await Promise.all([
-          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme').eq('id', user.id).single(),
+          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout').eq('id', user.id).single(),
           supabase.from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
         ]);
 
@@ -88,6 +95,7 @@ const Home = () => {
           }
           setProfileHeaderImageUrl(profileResponse.data.profile_header_image_url);
           setSelectedTheme(profileResponse.data.theme || 'default');
+          setSelectedLayout(profileResponse.data.layout || 'default');
         }
 
         if (linksResponse.error) {
@@ -237,6 +245,7 @@ const Home = () => {
         background_value: backgroundValueToSave,
         profile_header_image_url: profileHeaderImageUrl,
         theme: selectedTheme,
+        layout: selectedLayout,
       })
       .eq('id', user.id);
 
@@ -368,6 +377,38 @@ const Home = () => {
             <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
               {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Değişiklikleri Kaydet
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Yerleşim Düzeni</CardTitle>
+            <CardDescription>Profil sayfanızın genel yapısını seçin.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {layouts.map((layout) => {
+              const Icon = layout.icon;
+              return (
+                <div
+                  key={layout.id}
+                  className={cn(
+                    'p-4 border rounded-lg cursor-pointer transition-all flex flex-col items-center text-center',
+                    selectedLayout === layout.id ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
+                  )}
+                  onClick={() => setSelectedLayout(layout.id)}
+                >
+                  <Icon className="h-8 w-8 mb-2" />
+                  <h3 className="font-semibold">{layout.name}</h3>
+                  <p className="text-sm text-muted-foreground">{layout.description}</p>
+                </div>
+              );
+            })}
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Yerleşimi Kaydet
             </Button>
           </CardFooter>
         </Card>

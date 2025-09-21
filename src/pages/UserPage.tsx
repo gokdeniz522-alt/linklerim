@@ -8,6 +8,7 @@ import { MadeWithDyad } from '@/components/made-with-dyad';
 import { cn } from '@/lib/utils';
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
+type Layout = 'default' | 'sidebar-left';
 
 interface Profile {
   id: string;
@@ -18,6 +19,7 @@ interface Profile {
   background_value: string | null;
   profile_header_image_url: string | null;
   theme: Theme;
+  layout: Layout;
 }
 
 interface Link {
@@ -43,7 +45,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme')
+        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout')
         .eq('username', username)
         .single();
 
@@ -98,6 +100,7 @@ const UserPage = () => {
   }
 
   const theme = profile?.theme || 'default';
+  const layout = profile?.layout || 'default';
 
   const themeClasses = {
     page: {
@@ -179,59 +182,80 @@ const UserPage = () => {
     headerTextColorClass = 'text-white';
   }
 
+  const ProfileSection = () => (
+    <header 
+      className={cn(
+        "flex flex-col items-center text-center p-6",
+        headerTextColorClass,
+        themeClasses.header[theme],
+        profile?.profile_header_image_url ? 'bg-gray-800 bg-opacity-50' : '',
+        layout === 'default' ? 'mb-8' : 'md:mb-0'
+      )}
+      style={headerBackgroundStyle}
+    >
+      <Avatar className={cn("w-24 h-24 mb-4", themeClasses.avatar[theme])}>
+        <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username || ''} />
+        <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+      </Avatar>
+      <h1 className={cn(themeClasses.username[theme])}>@{profile?.username}</h1>
+      {profile?.bio && (
+        <p className={cn("mt-2 max-w-md", themeClasses.bio[theme])}>{profile.bio}</p>
+      )}
+    </header>
+  );
+
+  const LinksSection = () => (
+    <main className="space-y-4 w-full">
+      {links.length > 0 ? (
+        links.map(link => (
+          <a 
+            key={link.id} 
+            href={link.url} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="block"
+            onClick={() => handleLinkClick(link.id)}
+          >
+            <Card className={cn(themeClasses.linkCard[theme])}>
+              <CardContent className="p-4 text-center flex items-center justify-center gap-3">
+                {link.favicon_url && (
+                  <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
+                )}
+                <p className={cn(themeClasses.linkTitle[theme])}>{link.title}</p>
+              </CardContent>
+            </Card>
+          </a>
+        ))
+      ) : (
+        <p className={cn("text-center py-4", pageForcedClasses.includes('text-white') ? 'text-gray-200' : 'text-muted-foreground')}>Bu kullanıcının henüz eklenmiş bir linki yok.</p>
+      )}
+    </main>
+  );
+
   return (
     <div 
       className={cn("flex flex-col min-h-screen", pageForcedClasses)}
       style={pageBackgroundStyle}
     >
-      <div className="container mx-auto py-8 max-w-2xl relative flex-grow">
-        <div className="absolute top-8 right-8">
-          <ThemeToggle />
-        </div>
-        <header 
-          className={cn(
-            "flex flex-col items-center text-center mb-8 p-6",
-            headerTextColorClass,
-            themeClasses.header[theme],
-            profile?.profile_header_image_url ? 'bg-gray-800 bg-opacity-50' : ''
-          )}
-          style={headerBackgroundStyle}
-        >
-          <Avatar className={cn("w-24 h-24 mb-4", themeClasses.avatar[theme])}>
-            <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username || ''} />
-            <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <h1 className={cn(themeClasses.username[theme])}>@{profile?.username}</h1>
-          {profile?.bio && (
-            <p className={cn("mt-2 max-w-md", themeClasses.bio[theme])}>{profile.bio}</p>
-          )}
-        </header>
-
-        <main className="space-y-4">
-          {links.length > 0 ? (
-            links.map(link => (
-              <a 
-                key={link.id} 
-                href={link.url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="block"
-                onClick={() => handleLinkClick(link.id)}
-              >
-                <Card className={cn(themeClasses.linkCard[theme])}>
-                  <CardContent className="p-4 text-center flex items-center justify-center gap-3">
-                    {link.favicon_url && (
-                      <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
-                    )}
-                    <p className={cn(themeClasses.linkTitle[theme])}>{link.title}</p>
-                  </CardContent>
-                </Card>
-              </a>
-            ))
-          ) : (
-            <p className={cn("text-center py-4", pageForcedClasses.includes('text-white') ? 'text-gray-200' : 'text-muted-foreground')}>Bu kullanıcının henüz eklenmiş bir linki yok.</p>
-          )}
-        </main>
+      <div className="absolute top-8 right-8 z-10">
+        <ThemeToggle />
+      </div>
+      <div className="container mx-auto py-8 max-w-4xl flex-grow">
+        {layout === 'sidebar-left' ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+            <div className="md:col-span-1 md:sticky md:top-8">
+              <ProfileSection />
+            </div>
+            <div className="md:col-span-2">
+              <LinksSection />
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-2xl mx-auto">
+            <ProfileSection />
+            <LinksSection />
+          </div>
+        )}
       </div>
       <MadeWithDyad />
     </div>

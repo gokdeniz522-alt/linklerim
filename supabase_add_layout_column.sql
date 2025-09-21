@@ -1,0 +1,2 @@
+ALTER TABLE profiles
+ADD COLUMN layout TEXT NOT NULL DEFAULT 'default';
