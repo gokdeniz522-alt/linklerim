@@ -11,6 +11,7 @@ import { getYouTubeVideoId } from '@/utils/youtube';
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
 type Layout = 'default' | 'sidebar-left' | 'modern-cover';
 type YouTubeVisibility = 'visible' | 'hidden';
+type YouTubePosition = 'default' | 'background' | 'bottom-right';
 
 interface Profile {
   id: string;
@@ -24,6 +25,7 @@ interface Profile {
   layout: Layout;
   youtube_url: string | null;
   youtube_visibility: YouTubeVisibility;
+  youtube_position: YouTubePosition;
 }
 
 interface Link {
@@ -33,25 +35,38 @@ interface Link {
   favicon_url: string | null;
 }
 
-const YouTubePlayer = ({ videoId, visibility }: { videoId: string; visibility: YouTubeVisibility }) => {
-const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3`;
-
+const YouTubePlayer = ({ videoId, visibility, position }: { videoId: string; visibility: YouTubeVisibility; position: YouTubePosition }) => {
+  const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}`;
   
-  const playerClasses = visibility === 'visible' 
-    ? 'w-full aspect-video rounded-lg shadow-lg mb-8' 
-    : 'absolute w-0 h-0 border-0 -z-10';
+  if (visibility === 'hidden') {
+    return (
+      <iframe
+        className="absolute w-0 h-0 border-0 -z-10"
+        src={src}
+        title="YouTube video player"
+        allow="autoplay"
+      ></iframe>
+    );
+  }
+
+  const positionClasses = {
+    default: 'w-full aspect-video rounded-lg shadow-lg mb-8',
+    background: 'fixed top-0 left-0 w-full h-full -z-10 object-cover',
+    'bottom-right': 'fixed bottom-4 right-4 w-80 h-44 rounded-lg shadow-2xl z-50',
+  };
 
   return (
-  <iframe
-    className={playerClasses}
-    src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&iv_load_policy=3`}
-    title="YouTube video player"
-    frameBorder="0"
-    allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-    referrerPolicy="strict-origin-when-cross-origin"
-    allowFullScreen
-  ></iframe>
-
+    <div className={cn(positionClasses[position])}>
+        <iframe
+            className="w-full h-full"
+            src={src}
+            title="YouTube video player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+        ></iframe>
+    </div>
   );
 };
 
@@ -71,7 +86,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout, youtube_url, youtube_visibility')
+        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout, youtube_url, youtube_visibility, youtube_position')
         .eq('username', username)
         .single();
 
@@ -286,7 +301,6 @@ const UserPage = () => {
         return (
           <div className="max-w-2xl mx-auto">
             <ProfileSectionModernCover />
-            {videoId && <YouTubePlayer videoId={videoId} visibility={profile!.youtube_visibility} />}
             <LinksSection />
           </div>
         );
@@ -297,7 +311,6 @@ const UserPage = () => {
               <ProfileSectionDefault />
             </div>
             <div className="md:col-span-2">
-              {videoId && <YouTubePlayer videoId={videoId} visibility={profile!.youtube_visibility} />}
               <LinksSection />
             </div>
           </div>
@@ -307,7 +320,6 @@ const UserPage = () => {
         return (
           <div className="max-w-2xl mx-auto">
             <ProfileSectionDefault />
-            {videoId && <YouTubePlayer videoId={videoId} visibility={profile!.youtube_visibility} />}
             <LinksSection />
           </div>
         );
@@ -319,6 +331,7 @@ const UserPage = () => {
       className={cn("flex flex-col min-h-screen", pageForcedClasses)}
       style={pageBackgroundStyle}
     >
+      {videoId && <YouTubePlayer videoId={videoId} visibility={profile!.youtube_visibility} position={profile!.youtube_position} />}
       <div className="absolute top-8 right-8 z-10">
         <ThemeToggle />
       </div>

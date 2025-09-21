@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@supabase/supabase-js';
-import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera, Palette, Layout as LayoutIcon, PanelLeft, ImageIcon, Youtube } from 'lucide-react';
+import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera, Palette, Layout as LayoutIcon, PanelLeft, ImageIcon, Youtube, RectangleHorizontal, RectangleVertical, PictureInPicture2 } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -27,6 +27,7 @@ interface LinkType {
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
 type Layout = 'default' | 'sidebar-left' | 'modern-cover';
 type YouTubeVisibility = 'visible' | 'hidden';
+type YouTubePosition = 'default' | 'background' | 'bottom-right';
 
 const themes: { id: Theme; name: string; description: string }[] = [
   { id: 'default', name: 'Varsayılan', description: 'Modern ve yuvarlak hatlı standart tema.' },
@@ -40,6 +41,12 @@ const layouts: { id: Layout; name: string; description: string; icon: React.Elem
     { id: 'default', name: 'Varsayılan', description: 'Profil bilgileri sayfanın üst kısmında yer alır.', icon: LayoutIcon },
     { id: 'sidebar-left', name: 'Kenar Çubuğu', description: 'Profil bilgileri solda, linkler sağda listelenir.', icon: PanelLeft },
     { id: 'modern-cover', name: 'Modern Cover', description: 'Geniş kapak resmi ve alta konumlanmış avatar.', icon: ImageIcon },
+];
+
+const youtubePositions: { id: YouTubePosition; name: string; description: string; icon: React.ElementType }[] = [
+    { id: 'default', name: 'Normal', description: 'Video, sayfa içeriğinin bir parçası olarak görünür.', icon: RectangleHorizontal },
+    { id: 'background', name: 'Arka Plan', description: 'Video, tüm sayfanın arka planını kaplar.', icon: RectangleVertical },
+    { id: 'bottom-right', name: 'Sağ Alt Köşe', description: 'Video, sağ altta sabitlenmiş küçük bir oynatıcıda görünür.', icon: PictureInPicture2 },
 ];
 
 const Home = () => {
@@ -67,6 +74,7 @@ const Home = () => {
   const [selectedLayout, setSelectedLayout] = useState<Layout>('default');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubeVisibility, setYoutubeVisibility] = useState<YouTubeVisibility>('visible');
+  const [youtubePosition, setYoutubePosition] = useState<YouTubePosition>('default');
 
   const profileHeaderImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,7 +89,7 @@ const Home = () => {
         setUser(user);
         
         const [profileResponse, linksResponse] = await Promise.all([
-          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout, youtube_url, youtube_visibility').eq('id', user.id).single(),
+          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout, youtube_url, youtube_visibility, youtube_position').eq('id', user.id).single(),
           supabase.from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
         ]);
 
@@ -102,6 +110,7 @@ const Home = () => {
           setSelectedLayout(profileResponse.data.layout || 'default');
           setYoutubeUrl(profileResponse.data.youtube_url || '');
           setYoutubeVisibility(profileResponse.data.youtube_visibility || 'visible');
+          setYoutubePosition(profileResponse.data.youtube_position || 'default');
         }
 
         if (linksResponse.error) {
@@ -254,6 +263,7 @@ const Home = () => {
         layout: selectedLayout,
         youtube_url: youtubeUrl,
         youtube_visibility: youtubeVisibility,
+        youtube_position: youtubePosition,
       })
       .eq('id', user.id);
 
@@ -531,6 +541,30 @@ const Home = () => {
                 </SelectContent>
               </Select>
             </div>
+            {youtubeVisibility === 'visible' && (
+              <div className="space-y-4 pt-4 border-t">
+                <Label>Video Pozisyonu</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {youtubePositions.map((position) => {
+                        const Icon = position.icon;
+                        return (
+                            <div
+                            key={position.id}
+                            className={cn(
+                                'p-4 border rounded-lg cursor-pointer transition-all flex flex-col items-center text-center',
+                                youtubePosition === position.id ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
+                            )}
+                            onClick={() => setYoutubePosition(position.id)}
+                            >
+                            <Icon className="h-8 w-8 mb-2" />
+                            <h3 className="font-semibold">{position.name}</h3>
+                            <p className="text-sm text-muted-foreground">{position.description}</p>
+                            </div>
+                        );
+                    })}
+                </div>
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
