@@ -9,6 +9,7 @@ import { User } from '@supabase/supabase-js';
 import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface LinkType {
   id: number;
@@ -158,7 +159,10 @@ const Home = () => {
     <div className="container mx-auto py-8 max-w-3xl">
       <header className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Yönetim Paneli</h1>
-        <Button onClick={handleLogout} variant="outline">Çıkış Yap</Button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button onClick={handleLogout} variant="outline">Çıkış Yap</Button>
+        </div>
       </header>
       {username && (
         <div className="mb-8 text-sm text-muted-foreground">

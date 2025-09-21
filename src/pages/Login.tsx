@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/supabase';
 import { showError } from '@/utils/toast';
 import { Loader2 } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -31,7 +32,10 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="flex items-center justify-center min-h-screen bg-background relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Giriş Yap</CardTitle>

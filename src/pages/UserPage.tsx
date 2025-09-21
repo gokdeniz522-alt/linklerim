@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface Profile {
   id: string;
@@ -77,10 +78,13 @@ const UserPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-2xl">
+    <div className="container mx-auto py-8 max-w-2xl relative">
+      <div className="absolute top-8 right-8">
+        <ThemeToggle />
+      </div>
       <header className="flex flex-col items-center text-center mb-8">
         <Avatar className="w-24 h-24 mb-4">
-          <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username} />
+          <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username || ''} />
           <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <h1 className="text-3xl font-bold">@{profile?.username}</h1>
