@@ -39,6 +39,10 @@ const Home = () => {
   const [backgroundImageFile, setBackgroundImageFile] = useState<File | null>(null);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null);
   const [isUploadingBackground, setIsUploadingBackground] = useState(false);
+  const [profileHeaderImageFile, setProfileHeaderImageFile] = useState<File | null>(null);
+  const [profileHeaderImageUrl, setProfileHeaderImageUrl] = useState<string | null>(null);
+  const [isUploadingProfileHeader, setIsUploadingProfileHeader] = useState(false);
+
 
   const navigate = useNavigate();
 
@@ -51,7 +55,7 @@ const Home = () => {
         setUser(user);
         
         const [profileResponse, linksResponse] = await Promise.all([
-          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value').eq('id', user.id).single(),
+          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url').eq('id', user.id).single(),
           supabase.from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
         ]);
 
@@ -67,6 +71,7 @@ const Home = () => {
           } else if (profileResponse.data.background_type === 'image') {
             setBackgroundImageUrl(profileResponse.data.background_value);
           }
+          setProfileHeaderImageUrl(profileResponse.data.profile_header_image_url);
         }
 
         if (linksResponse.error) {
@@ -97,6 +102,12 @@ const Home = () => {
   const handleBackgroundImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setBackgroundImageFile(event.target.files[0]);
+    }
+  };
+
+  const handleProfileHeaderImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setProfileHeaderImageFile(event.target.files[0]);
     }
   };
 
@@ -155,6 +166,21 @@ const Home = () => {
     }
   };
 
+  const handleProfileHeaderImageUpload = async () => {
+    if (!profileHeaderImageFile || !user) return;
+
+    setIsUploadingProfileHeader(true);
+    try {
+      const newProfileHeaderImageUrl = await uploadImageToImgBB(profileHeaderImageFile);
+      setProfileHeaderImageUrl(newProfileHeaderImageUrl);
+      showSuccess('Profil başlık resmi başarıyla yüklendi! Kaydetmeyi unutmayın.');
+    } catch (error: any) {
+      showError(error.message || 'Profil başlık resmi yüklenemedi.');
+    } finally {
+      setIsUploadingProfileHeader(false);
+    }
+  };
+
   const handleUpdateProfile = async () => {
     if (!user) return;
     setIsSavingProfile(true);
@@ -171,7 +197,8 @@ const Home = () => {
       .update({ 
         bio: bio,
         background_type: backgroundType,
-        background_value: backgroundValueToSave
+        background_value: backgroundValueToSave,
+        profile_header_image_url: profileHeaderImageUrl
       })
       .eq('id', user.id);
 
@@ -321,6 +348,35 @@ const Home = () => {
                 )}
               </div>
             )}
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Değişiklikleri Kaydet
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Profil Başlık Resmi</CardTitle>
+            <CardDescription>Profil resminizin arkasında görünecek bir görsel yükleyin.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="profile-header-image">Başlık Resmi</Label>
+              <Input id="profile-header-image" type="file" accept="image/*" onChange={handleProfileHeaderImageFileChange} />
+              <Button onClick={handleProfileHeaderImageUpload} disabled={!profileHeaderImageFile || isUploadingProfileHeader} size="sm" className="mt-2">
+                {isUploadingProfileHeader ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                Resmi Yükle
+              </Button>
+              {profileHeaderImageUrl && (
+                <div className="mt-2">
+                  <p className="text-sm text-muted-foreground">Mevcut Başlık Resmi:</p>
+                  <img src={profileHeaderImageUrl} alt="Başlık Resmi Önizlemesi" className="w-full h-32 object-cover rounded-md mt-1" />
+                </div>
+              )}
+            </div>
           </CardContent>
           <CardFooter>
             <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>

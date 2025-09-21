@@ -14,6 +14,7 @@ interface Profile {
   bio: string | null;
   background_type: 'none' | 'color' | 'image';
   background_value: string | null;
+  profile_header_image_url: string | null; // Yeni eklenen alan
 }
 
 interface Link {
@@ -38,7 +39,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, bio, background_type, background_value')
+        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url') // Yeni alanı seçiyoruz
         .eq('username', username)
         .single();
 
@@ -92,36 +93,54 @@ const UserPage = () => {
     );
   }
 
-  const backgroundStyle: React.CSSProperties = {};
+  const pageBackgroundStyle: React.CSSProperties = {};
+  let pageTextColorClass = '';
+
   if (profile?.background_type === 'color' && profile.background_value) {
-    backgroundStyle.backgroundColor = profile.background_value;
+    pageBackgroundStyle.backgroundColor = profile.background_value;
   } else if (profile?.background_type === 'image' && profile.background_value) {
-    backgroundStyle.backgroundImage = `url(${profile.background_value})`;
-    backgroundStyle.backgroundSize = 'cover';
-    backgroundStyle.backgroundPosition = 'center';
-    backgroundStyle.backgroundRepeat = 'no-repeat';
+    pageBackgroundStyle.backgroundImage = `url(${profile.background_value})`;
+    pageBackgroundStyle.backgroundSize = 'cover';
+    pageBackgroundStyle.backgroundPosition = 'center';
+    pageBackgroundStyle.backgroundRepeat = 'no-repeat';
+    pageTextColorClass = 'text-white'; // Arka plan resimse metin rengini beyaz yap
+  }
+
+  const headerBackgroundStyle: React.CSSProperties = {};
+  let headerTextColorClass = '';
+
+  if (profile?.profile_header_image_url) {
+    headerBackgroundStyle.backgroundImage = `url(${profile.profile_header_image_url})`;
+    headerBackgroundStyle.backgroundSize = 'cover';
+    headerBackgroundStyle.backgroundPosition = 'center';
+    headerBackgroundStyle.backgroundRepeat = 'no-repeat';
+    headerTextColorClass = 'text-white'; // Başlık resmi varsa metin rengini beyaz yap
   }
 
   return (
     <div 
-      className={cn(
-        "flex flex-col min-h-screen",
-        profile?.background_type === 'image' ? 'text-white' : '' // Adjust text color for better contrast on images
-      )}
-      style={backgroundStyle}
+      className={cn("flex flex-col min-h-screen", pageTextColorClass)}
+      style={pageBackgroundStyle}
     >
       <div className="container mx-auto py-8 max-w-2xl relative flex-grow">
         <div className="absolute top-8 right-8">
           <ThemeToggle />
         </div>
-        <header className="flex flex-col items-center text-center mb-8">
-          <Avatar className="w-24 h-24 mb-4">
+        <header 
+          className={cn(
+            "flex flex-col items-center text-center mb-8 p-6 rounded-lg",
+            headerTextColorClass,
+            profile?.profile_header_image_url ? 'bg-gray-800 bg-opacity-50' : '' // Resim varsa hafif bir overlay ekleyebiliriz
+          )}
+          style={headerBackgroundStyle}
+        >
+          <Avatar className="w-24 h-24 mb-4 border-4 border-white dark:border-gray-800">
             <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username || ''} />
             <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
           <h1 className="text-3xl font-bold">@{profile?.username}</h1>
           {profile?.bio && (
-            <p className="text-muted-foreground mt-2 max-w-md">{profile.bio}</p>
+            <p className={cn("mt-2 max-w-md", profile?.profile_header_image_url ? 'text-gray-200' : 'text-muted-foreground')}>{profile.bio}</p>
           )}
         </header>
 
@@ -144,7 +163,7 @@ const UserPage = () => {
               </a>
             ))
           ) : (
-            <p className="text-muted-foreground text-center py-4">Bu kullanıcının henüz eklenmiş bir linki yok.</p>
+            <p className={cn("text-center py-4", pageTextColorClass === 'text-white' ? 'text-gray-200' : 'text-muted-foreground')}>Bu kullanıcının henüz eklenmiş bir linki yok.</p>
           )}
         </main>
       </div>
