@@ -35,7 +35,7 @@ const LandingPage = () => {
           {/* Sağ Taraf: Görsel Alanı */}
           <div className="flex justify-center md:justify-end">
             <img
-              src="/placeholder.svg" // Uygulamanızı temsil eden bir görsel buraya gelebilir
+              src="/placeholder.PNG" // Uygulamanızı temsil eden bir görsel buraya gelebilir
               alt="Linklerinizi tek bir yerde toplayın"
               className="w-full max-w-md h-auto object-cover rounded-lg shadow-lg"
             />
