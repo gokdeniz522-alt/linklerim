@@ -8,7 +8,7 @@ import { MadeWithDyad } from '@/components/made-with-dyad';
 import { cn } from '@/lib/utils';
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
-type Layout = 'default' | 'sidebar-left';
+type Layout = 'default' | 'sidebar-left' | 'modern-cover';
 
 interface Profile {
   id: string;
@@ -171,27 +171,24 @@ const UserPage = () => {
     }
   }
 
-  const headerBackgroundStyle: React.CSSProperties = {};
-  let headerTextColorClass = '';
+  const headerBackgroundStyle: React.CSSProperties = {
+    backgroundImage: profile?.profile_header_image_url ? `url(${profile.profile_header_image_url})` : 'none',
+    backgroundColor: profile?.profile_header_image_url ? '' : 'hsl(var(--muted))',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  };
 
-  if (profile?.profile_header_image_url) {
-    headerBackgroundStyle.backgroundImage = `url(${profile.profile_header_image_url})`;
-    headerBackgroundStyle.backgroundSize = 'cover';
-    headerBackgroundStyle.backgroundPosition = 'center';
-    headerBackgroundStyle.backgroundRepeat = 'no-repeat';
-    headerTextColorClass = 'text-white';
-  }
-
-  const ProfileSection = () => (
+  const ProfileSectionDefault = () => (
     <header 
       className={cn(
         "flex flex-col items-center text-center p-6",
-        headerTextColorClass,
+        profile?.profile_header_image_url && 'text-white',
         themeClasses.header[theme],
         profile?.profile_header_image_url ? 'bg-gray-800 bg-opacity-50' : '',
         layout === 'default' ? 'mb-8' : 'md:mb-0'
       )}
-      style={headerBackgroundStyle}
+      style={profile?.profile_header_image_url ? headerBackgroundStyle : {}}
     >
       <Avatar className={cn("w-24 h-24 mb-4", themeClasses.avatar[theme])}>
         <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username || ''} />
@@ -204,8 +201,26 @@ const UserPage = () => {
     </header>
   );
 
+  const ProfileSectionModernCover = () => (
+    <div className="mb-12">
+      <div className={cn("w-full h-48 md:h-64 rounded-lg", themeClasses.header[theme])} style={headerBackgroundStyle}></div>
+      <div className="flex items-center gap-4 px-4 -mt-12">
+        <Avatar className={cn("w-24 h-24 md:w-32 md:h-32 flex-shrink-0", themeClasses.avatar[theme])}>
+          <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username || ''} />
+          <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div className="pt-12">
+          <h1 className={cn(themeClasses.username[theme])}>@{profile?.username}</h1>
+          {profile?.bio && (
+            <p className={cn("mt-1 max-w-md", themeClasses.bio[theme])}>{profile.bio}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   const LinksSection = () => (
-    <main className="space-y-4 w-full">
+    <main className="space-y-4 w-full px-4 md:px-0">
       {links.length > 0 ? (
         links.map(link => (
           <a 
@@ -232,6 +247,37 @@ const UserPage = () => {
     </main>
   );
 
+  const renderLayout = () => {
+    switch (layout) {
+      case 'modern-cover':
+        return (
+          <div className="max-w-2xl mx-auto">
+            <ProfileSectionModernCover />
+            <LinksSection />
+          </div>
+        );
+      case 'sidebar-left':
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+            <div className="md:col-span-1 md:sticky md:top-8">
+              <ProfileSectionDefault />
+            </div>
+            <div className="md:col-span-2">
+              <LinksSection />
+            </div>
+          </div>
+        );
+      case 'default':
+      default:
+        return (
+          <div className="max-w-2xl mx-auto">
+            <ProfileSectionDefault />
+            <LinksSection />
+          </div>
+        );
+    }
+  };
+
   return (
     <div 
       className={cn("flex flex-col min-h-screen", pageForcedClasses)}
@@ -241,21 +287,7 @@ const UserPage = () => {
         <ThemeToggle />
       </div>
       <div className="container mx-auto py-8 max-w-4xl flex-grow">
-        {layout === 'sidebar-left' ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-            <div className="md:col-span-1 md:sticky md:top-8">
-              <ProfileSection />
-            </div>
-            <div className="md:col-span-2">
-              <LinksSection />
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-2xl mx-auto">
-            <ProfileSection />
-            <LinksSection />
-          </div>
-        )}
+        {renderLayout()}
       </div>
       <MadeWithDyad />
     </div>

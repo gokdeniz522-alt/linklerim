@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@supabase/supabase-js';
-import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera, Palette, Layout as LayoutIcon, PanelLeft } from 'lucide-react';
+import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera, Palette, Layout as LayoutIcon, PanelLeft, ImageIcon } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -25,7 +25,7 @@ interface LinkType {
 }
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
-type Layout = 'default' | 'sidebar-left';
+type Layout = 'default' | 'sidebar-left' | 'modern-cover';
 
 const themes: { id: Theme; name: string; description: string }[] = [
   { id: 'default', name: 'Varsayılan', description: 'Modern ve yuvarlak hatlı standart tema.' },
@@ -38,6 +38,7 @@ const themes: { id: Theme; name: string; description: string }[] = [
 const layouts: { id: Layout; name: string; description: string; icon: React.ElementType }[] = [
     { id: 'default', name: 'Varsayılan', description: 'Profil bilgileri sayfanın üst kısmında yer alır.', icon: LayoutIcon },
     { id: 'sidebar-left', name: 'Kenar Çubuğu', description: 'Profil bilgileri solda, linkler sağda listelenir.', icon: PanelLeft },
+    { id: 'modern-cover', name: 'Modern Cover', description: 'Geniş kapak resmi ve alta konumlanmış avatar.', icon: ImageIcon },
 ];
 
 const Home = () => {
@@ -386,7 +387,7 @@ const Home = () => {
             <CardTitle>Yerleşim Düzeni</CardTitle>
             <CardDescription>Profil sayfanızın genel yapısını seçin.</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {layouts.map((layout) => {
               const Icon = layout.icon;
               return (
