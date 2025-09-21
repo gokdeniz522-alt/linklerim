@@ -6,6 +6,7 @@ import { Session } from '@supabase/supabase-js';
 import Home from "./pages/Home";
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import UserPage from './pages/UserPage';
 import NotFound from "./pages/NotFound";
 
 const App = () => {
@@ -37,6 +38,7 @@ const App = () => {
           <Route path="/" element={session ? <Home /> : <Navigate to="/login" />} />
           <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
           <Route path="/signup" element={!session ? <SignUp /> : <Navigate to="/" />} />
+          <Route path="/:username" element={<UserPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

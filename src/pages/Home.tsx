@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@supabase/supabase-js';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
-interface Link {
+interface LinkType {
   id: number;
   title: string;
   url: string;
@@ -18,7 +18,8 @@ interface Link {
 
 const Home = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [links, setLinks] = useState<Link[]>([]);
+  const [username, setUsername] = useState<string | null>(null);
+  const [links, setLinks] = useState<LinkType[]>([]);
   const [newLinkTitle, setNewLinkTitle] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -30,18 +31,27 @@ const Home = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
-        const { data: links, error } = await supabase
-          .from('links')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+        
+        // Fetch profile and links in parallel
+        const [profileResponse, linksResponse] = await Promise.all([
+          supabase.from('profiles').select('username').eq('id', user.id).single(),
+          supabase.from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+        ]);
 
-        if (error) {
-          showError('Linkler yüklenirken bir hata oluştu.');
-          console.error(error);
+        if (profileResponse.error) {
+          showError('Profil bilgileri yüklenemedi.');
+          console.error(profileResponse.error);
         } else {
-          setLinks(links);
+          setUsername(profileResponse.data.username);
         }
+
+        if (linksResponse.error) {
+          showError('Linkler yüklenirken bir hata oluştu.');
+          console.error(linksResponse.error);
+        } else {
+          setLinks(linksResponse.data);
+        }
+
       } else {
         navigate('/login');
       }
@@ -67,18 +77,30 @@ const Home = () => {
     const { data, error } = await supabase
       .from('links')
       .insert([{ title: newLinkTitle, url: newLinkUrl, user_id: user.id }])
-      .select();
+      .select()
+      .single();
 
     if (error) {
       showError('Link eklenirken bir hata oluştu.');
       console.error(error);
     } else if (data) {
-      setLinks([data[0], ...links]);
+      setLinks([data, ...links]);
       setNewLinkTitle('');
       setNewLinkUrl('');
       showSuccess('Link başarıyla eklendi!');
     }
     setIsSubmitting(false);
+  };
+
+  const handleDeleteLink = async (linkId: number) => {
+    const { error } = await supabase.from('links').delete().eq('id', linkId);
+    if (error) {
+      showError('Link silinirken bir hata oluştu.');
+      console.error(error);
+    } else {
+      setLinks(links.filter(link => link.id !== linkId));
+      showSuccess('Link başarıyla silindi.');
+    }
   };
 
   if (isLoading) {
@@ -87,10 +109,15 @@ const Home = () => {
 
   return (
     <div className="container mx-auto py-8 max-w-3xl">
-      <header className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Hoş Geldin, {user?.email}</h1>
+      <header className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Yönetim Paneli</h1>
         <Button onClick={handleLogout} variant="outline">Çıkış Yap</Button>
       </header>
+      {username && (
+        <div className="mb-8 text-sm text-muted-foreground">
+          Herkese açık profil sayfan: <Link to={`/${username}`} className="underline hover:text-primary">{window.location.origin}/{username}</Link>
+        </div>
+      )}
       
       <main className="space-y-8">
         <Card>
@@ -131,6 +158,9 @@ const Home = () => {
                         {link.url}
                       </a>
                     </div>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteLink(link.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </CardContent>
                 </Card>
               ))
