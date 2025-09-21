@@ -5,12 +5,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { MadeWithDyad } from '@/components/made-with-dyad';
+import { cn } from '@/lib/utils';
 
 interface Profile {
   id: string;
   username: string;
   avatar_url: string | null;
   bio: string | null;
+  background_type: 'none' | 'color' | 'image';
+  background_value: string | null;
 }
 
 interface Link {
@@ -35,7 +38,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, bio')
+        .select('id, username, avatar_url, bio, background_type, background_value')
         .eq('username', username)
         .single();
 
@@ -89,8 +92,24 @@ const UserPage = () => {
     );
   }
 
+  const backgroundStyle: React.CSSProperties = {};
+  if (profile?.background_type === 'color' && profile.background_value) {
+    backgroundStyle.backgroundColor = profile.background_value;
+  } else if (profile?.background_type === 'image' && profile.background_value) {
+    backgroundStyle.backgroundImage = `url(${profile.background_value})`;
+    backgroundStyle.backgroundSize = 'cover';
+    backgroundStyle.backgroundPosition = 'center';
+    backgroundStyle.backgroundRepeat = 'no-repeat';
+  }
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <div 
+      className={cn(
+        "flex flex-col min-h-screen",
+        profile?.background_type === 'image' ? 'text-white' : '' // Adjust text color for better contrast on images
+      )}
+      style={backgroundStyle}
+    >
       <div className="container mx-auto py-8 max-w-2xl relative flex-grow">
         <div className="absolute top-8 right-8">
           <ThemeToggle />
