@@ -44,7 +44,7 @@ const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1
   return (
   <iframe
     className={playerClasses}
-    src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&iv_load_policy=3`}
+    src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=2&controls=0&modestbranding=1&rel=0&iv_load_policy=3`}
     title="YouTube video player"
     frameBorder="0"
     allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
