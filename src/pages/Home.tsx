@@ -6,22 +6,25 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@supabase/supabase-js';
-import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
+import { Eye, Loader2, PlusCircle, Save, Trash2, Upload } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Textarea } from '@/components/ui/textarea';
 
 interface LinkType {
   id: number;
   title: string;
   url: string;
   created_at: string;
+  click_count: number;
 }
 
 const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [bio, setBio] = useState('');
   const [links, setLinks] = useState<LinkType[]>([]);
   const [newLinkTitle, setNewLinkTitle] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
@@ -29,6 +32,7 @@ const Home = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const navigate = useNavigate();
 
   const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY;
@@ -40,7 +44,7 @@ const Home = () => {
         setUser(user);
         
         const [profileResponse, linksResponse] = await Promise.all([
-          supabase.from('profiles').select('username, avatar_url').eq('id', user.id).single(),
+          supabase.from('profiles').select('username, avatar_url, bio').eq('id', user.id).single(),
           supabase.from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
         ]);
 
@@ -49,6 +53,7 @@ const Home = () => {
         } else {
           setUsername(profileResponse.data.username);
           setAvatarUrl(profileResponse.data.avatar_url);
+          setBio(profileResponse.data.bio || '');
         }
 
         if (linksResponse.error) {
@@ -98,9 +103,7 @@ const Home = () => {
           .update({ avatar_url: newAvatarUrl })
           .eq('id', user.id);
 
-        if (error) {
-          throw new Error(error.message);
-        }
+        if (error) throw new Error(error.message);
 
         setAvatarUrl(newAvatarUrl);
         setSelectedFile(null);
@@ -113,6 +116,22 @@ const Home = () => {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+    setIsSavingProfile(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ bio: bio })
+      .eq('id', user.id);
+
+    if (error) {
+      showError('Profil güncellenirken bir hata oluştu.');
+    } else {
+      showSuccess('Profil başarıyla güncellendi!');
+    }
+    setIsSavingProfile(false);
   };
 
   const handleAddLink = async (e: React.FormEvent) => {
@@ -174,22 +193,32 @@ const Home = () => {
         <Card>
           <CardHeader>
             <CardTitle>Profil Ayarları</CardTitle>
-            <CardDescription>Profil resminizi güncelleyin.</CardDescription>
+            <CardDescription>Profil resminizi ve açıklamanızı güncelleyin.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row items-center gap-6">
-            <Avatar className="w-24 h-24">
-              <AvatarImage src={avatarUrl || `https://api.dicebear.com/8.x/initials/svg?seed=${username}`} alt={username || ''} />
-              <AvatarFallback>{username?.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="picture">Profil Resmi</Label>
-              <Input id="picture" type="file" accept="image/*" onChange={handleFileChange} />
+          <CardContent className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <Avatar className="w-24 h-24">
+                <AvatarImage src={avatarUrl || `https://api.dicebear.com/8.x/initials/svg?seed=${username}`} alt={username || ''} />
+                <AvatarFallback>{username?.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor="picture">Profil Resmi</Label>
+                <Input id="picture" type="file" accept="image/*" onChange={handleFileChange} />
+                <Button onClick={handleAvatarUpload} disabled={!selectedFile || isUploading} size="sm" className="mt-2">
+                  {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  Yükle
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bio">Profil Açıklaması (Bio)</Label>
+              <Textarea id="bio" placeholder="Kendinizden bahsedin..." value={bio} onChange={(e) => setBio(e.target.value)} maxLength={200} />
             </div>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleAvatarUpload} disabled={!selectedFile || isUploading}>
-              {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-              Yükle
+            <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Değişiklikleri Kaydet
             </Button>
           </CardFooter>
         </Card>
@@ -232,9 +261,15 @@ const Home = () => {
                         {link.url}
                       </a>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteLink(link.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Eye className="h-4 w-4" />
+                        <span>{link.click_count}</span>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteLink(link.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))

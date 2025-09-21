@@ -4,11 +4,13 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { MadeWithDyad } from '@/components/made-with-dyad';
 
 interface Profile {
   id: string;
   username: string;
   avatar_url: string | null;
+  bio: string | null;
 }
 
 interface Link {
@@ -33,7 +35,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url')
+        .select('id, username, avatar_url, bio')
         .eq('username', username)
         .single();
 
@@ -62,6 +64,16 @@ const UserPage = () => {
     fetchUserData();
   }, [username]);
 
+  const handleLinkClick = async (linkId: number) => {
+    try {
+      await supabase.rpc('increment_link_click', {
+        link_id_to_update: linkId,
+      });
+    } catch (error) {
+      console.error('Error incrementing link click:', error);
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Yükleniyor...</div>;
   }
@@ -78,33 +90,46 @@ const UserPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-2xl relative">
-      <div className="absolute top-8 right-8">
-        <ThemeToggle />
-      </div>
-      <header className="flex flex-col items-center text-center mb-8">
-        <Avatar className="w-24 h-24 mb-4">
-          <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username || ''} />
-          <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
-        <h1 className="text-3xl font-bold">@{profile?.username}</h1>
-      </header>
+    <div className="flex flex-col min-h-screen">
+      <div className="container mx-auto py-8 max-w-2xl relative flex-grow">
+        <div className="absolute top-8 right-8">
+          <ThemeToggle />
+        </div>
+        <header className="flex flex-col items-center text-center mb-8">
+          <Avatar className="w-24 h-24 mb-4">
+            <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username || ''} />
+            <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <h1 className="text-3xl font-bold">@{profile?.username}</h1>
+          {profile?.bio && (
+            <p className="text-muted-foreground mt-2 max-w-md">{profile.bio}</p>
+          )}
+        </header>
 
-      <main className="space-y-4">
-        {links.length > 0 ? (
-          links.map(link => (
-            <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="block">
-              <Card className="hover:bg-muted transition-colors">
-                <CardContent className="p-4 text-center">
-                  <p className="font-semibold text-lg">{link.title}</p>
-                </CardContent>
-              </Card>
-            </a>
-          ))
-        ) : (
-          <p className="text-muted-foreground text-center py-4">Bu kullanıcının henüz eklenmiş bir linki yok.</p>
-        )}
-      </main>
+        <main className="space-y-4">
+          {links.length > 0 ? (
+            links.map(link => (
+              <a 
+                key={link.id} 
+                href={link.url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="block"
+                onClick={() => handleLinkClick(link.id)}
+              >
+                <Card className="hover:bg-muted transition-colors">
+                  <CardContent className="p-4 text-center">
+                    <p className="font-semibold text-lg">{link.title}</p>
+                  </CardContent>
+                </Card>
+              </a>
+            ))
+          ) : (
+            <p className="text-muted-foreground text-center py-4">Bu kullanıcının henüz eklenmiş bir linki yok.</p>
+          )}
+        </main>
+      </div>
+      <MadeWithDyad />
     </div>
   );
 };
