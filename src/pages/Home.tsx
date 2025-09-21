@@ -181,6 +181,26 @@ const Home = () => {
     }
   };
 
+  const handleRemoveProfileHeaderImage = async () => {
+    if (!user) return;
+    setIsSavingProfile(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ profile_header_image_url: null })
+        .eq('id', user.id);
+
+      if (error) throw new Error(error.message);
+
+      setProfileHeaderImageUrl(null);
+      showSuccess('Profil başlık resmi başarıyla kaldırıldı!');
+    } catch (error: any) {
+      showError(error.message || 'Profil başlık resmi kaldırılamadı.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const handleUpdateProfile = async () => {
     if (!user) return;
     setIsSavingProfile(true);
@@ -366,10 +386,18 @@ const Home = () => {
             <div className="space-y-2">
               <Label htmlFor="profile-header-image">Başlık Resmi</Label>
               <Input id="profile-header-image" type="file" accept="image/*" onChange={handleProfileHeaderImageFileChange} />
-              <Button onClick={handleProfileHeaderImageUpload} disabled={!profileHeaderImageFile || isUploadingProfileHeader} size="sm" className="mt-2">
-                {isUploadingProfileHeader ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                Resmi Yükle
-              </Button>
+              <div className="flex gap-2 mt-2">
+                <Button onClick={handleProfileHeaderImageUpload} disabled={!profileHeaderImageFile || isUploadingProfileHeader} size="sm">
+                  {isUploadingProfileHeader ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  Resmi Yükle
+                </Button>
+                {profileHeaderImageUrl && (
+                  <Button onClick={handleRemoveProfileHeaderImage} disabled={isSavingProfile} variant="destructive" size="sm">
+                    {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                    Kaldır
+                  </Button>
+                )}
+              </div>
               {profileHeaderImageUrl && (
                 <div className="mt-2">
                   <p className="text-sm text-muted-foreground">Mevcut Başlık Resmi:</p>

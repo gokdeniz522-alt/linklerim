@@ -6,7 +6,7 @@ import { ThemeProvider } from "./components/theme-provider";
 createRoot(document.getElementById("root")!).render(
     <ThemeProvider 
         attribute="class"
-        defaultTheme="light" 
+        defaultTheme="dark" 
         storageKey="vite-ui-theme"
         enableSystem
         disableTransitionOnChange
