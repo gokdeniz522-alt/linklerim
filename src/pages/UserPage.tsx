@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,9 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { cn } from '@/lib/utils';
+import { getYouTubeVideoId } from '@/utils/youtube';
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
 type Layout = 'default' | 'sidebar-left' | 'modern-cover';
+type YouTubeVisibility = 'visible' | 'hidden';
 
 interface Profile {
   id: string;
@@ -20,6 +22,8 @@ interface Profile {
   profile_header_image_url: string | null;
   theme: Theme;
   layout: Layout;
+  youtube_url: string | null;
+  youtube_visibility: YouTubeVisibility;
 }
 
 interface Link {
@@ -28,6 +32,26 @@ interface Link {
   url: string;
   favicon_url: string | null;
 }
+
+const YouTubePlayer = ({ videoId, visibility }: { videoId: string; visibility: YouTubeVisibility }) => {
+  const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}`;
+  
+  const playerClasses = visibility === 'visible' 
+    ? 'w-full aspect-video rounded-lg shadow-lg mb-8' 
+    : 'absolute w-0 h-0 border-0 -z-10';
+
+  return (
+    <iframe
+      className={playerClasses}
+      src={src}
+      title="YouTube video player"
+      frameBorder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerPolicy="strict-origin-when-cross-origin"
+      allowFullScreen
+    ></iframe>
+  );
+};
 
 const UserPage = () => {
   const { username } = useParams<{ username: string }>();
@@ -45,7 +69,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout')
+        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout, youtube_url, youtube_visibility')
         .eq('username', username)
         .single();
 
@@ -73,6 +97,13 @@ const UserPage = () => {
 
     fetchUserData();
   }, [username]);
+
+  const videoId = useMemo(() => {
+    if (profile?.youtube_url) {
+      return getYouTubeVideoId(profile.youtube_url);
+    }
+    return null;
+  }, [profile?.youtube_url]);
 
   const handleLinkClick = async (linkId: number) => {
     try {
@@ -253,6 +284,7 @@ const UserPage = () => {
         return (
           <div className="max-w-2xl mx-auto">
             <ProfileSectionModernCover />
+            {videoId && <YouTubePlayer videoId={videoId} visibility={profile!.youtube_visibility} />}
             <LinksSection />
           </div>
         );
@@ -263,6 +295,7 @@ const UserPage = () => {
               <ProfileSectionDefault />
             </div>
             <div className="md:col-span-2">
+              {videoId && <YouTubePlayer videoId={videoId} visibility={profile!.youtube_visibility} />}
               <LinksSection />
             </div>
           </div>
@@ -272,6 +305,7 @@ const UserPage = () => {
         return (
           <div className="max-w-2xl mx-auto">
             <ProfileSectionDefault />
+            {videoId && <YouTubePlayer videoId={videoId} visibility={profile!.youtube_visibility} />}
             <LinksSection />
           </div>
         );

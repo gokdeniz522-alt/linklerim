@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@supabase/supabase-js';
-import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera, Palette, Layout as LayoutIcon, PanelLeft, ImageIcon } from 'lucide-react';
+import { Eye, Loader2, PlusCircle, Save, Trash2, Upload, Camera, Palette, Layout as LayoutIcon, PanelLeft, ImageIcon, Youtube } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -26,6 +26,7 @@ interface LinkType {
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
 type Layout = 'default' | 'sidebar-left' | 'modern-cover';
+type YouTubeVisibility = 'visible' | 'hidden';
 
 const themes: { id: Theme; name: string; description: string }[] = [
   { id: 'default', name: 'Varsayılan', description: 'Modern ve yuvarlak hatlı standart tema.' },
@@ -64,6 +65,8 @@ const Home = () => {
   const [isUploadingProfileHeader, setIsUploadingProfileHeader] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<Theme>('default');
   const [selectedLayout, setSelectedLayout] = useState<Layout>('default');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [youtubeVisibility, setYoutubeVisibility] = useState<YouTubeVisibility>('visible');
 
   const profileHeaderImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,7 +81,7 @@ const Home = () => {
         setUser(user);
         
         const [profileResponse, linksResponse] = await Promise.all([
-          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout').eq('id', user.id).single(),
+          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout, youtube_url, youtube_visibility').eq('id', user.id).single(),
           supabase.from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
         ]);
 
@@ -97,6 +100,8 @@ const Home = () => {
           setProfileHeaderImageUrl(profileResponse.data.profile_header_image_url);
           setSelectedTheme(profileResponse.data.theme || 'default');
           setSelectedLayout(profileResponse.data.layout || 'default');
+          setYoutubeUrl(profileResponse.data.youtube_url || '');
+          setYoutubeVisibility(profileResponse.data.youtube_visibility || 'visible');
         }
 
         if (linksResponse.error) {
@@ -247,6 +252,8 @@ const Home = () => {
         profile_header_image_url: profileHeaderImageUrl,
         theme: selectedTheme,
         layout: selectedLayout,
+        youtube_url: youtubeUrl,
+        youtube_visibility: youtubeVisibility,
       })
       .eq('id', user.id);
 
@@ -498,6 +505,37 @@ const Home = () => {
             <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
               {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Değişiklikleri Kaydet
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>YouTube Video</CardTitle>
+            <CardDescription>Profilinize arka planda çalacak bir YouTube videosu veya müziği ekleyin.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="youtube-url">YouTube Video URL</Label>
+              <Input id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="youtube-visibility">Görünürlük</Label>
+              <Select value={youtubeVisibility} onValueChange={(value: YouTubeVisibility) => setYoutubeVisibility(value)}>
+                <SelectTrigger id="youtube-visibility">
+                  <SelectValue placeholder="Görünürlük seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="visible">Görünür Video</SelectItem>
+                  <SelectItem value="hidden">Gizli (Sadece Ses)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Kaydet
             </Button>
           </CardFooter>
         </Card>
