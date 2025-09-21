@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import UserPage from './pages/UserPage';
 import NotFound from "./pages/NotFound";
+import LandingPage from './pages/LandingPage'; // Yeni LandingPage'i import ediyoruz
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -35,10 +36,17 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={session ? <Home /> : <Navigate to="/login" />} />
-          <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-          <Route path="/signup" element={!session ? <SignUp /> : <Navigate to="/" />} />
+          {/* Ana sayfa: Giriş yapmamış kullanıcılar için LandingPage, giriş yapmışlar için Dashboard */}
+          <Route path="/" element={session ? <Navigate to="/dashboard" /> : <LandingPage />} />
+          {/* Yönetim paneli: Sadece giriş yapmış kullanıcılar erişebilir */}
+          <Route path="/dashboard" element={session ? <Home /> : <Navigate to="/login" />} />
+          {/* Giriş sayfası: Giriş yapmamış kullanıcılar erişebilir, giriş yapmışlar Dashboard'a yönlendirilir */}
+          <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
+          {/* Kayıt sayfası: Giriş yapmamış kullanıcılar erişebilir, giriş yapmışlar Dashboard'a yönlendirilir */}
+          <Route path="/signup" element={!session ? <SignUp /> : <Navigate to="/dashboard" />} />
+          {/* Kullanıcı profil sayfası */}
           <Route path="/:username" element={<UserPage />} />
+          {/* Bulunamayan sayfalar */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
