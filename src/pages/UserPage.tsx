@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface Profile {
   id: string;
   username: string;
+  avatar_url: string | null;
 }
 
 interface Link {
@@ -29,10 +30,9 @@ const UserPage = () => {
       setLoading(true);
       setError(null);
 
-      // 1. Kullanıcı adından profili bul
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username')
+        .select('id, username, avatar_url')
         .eq('username', username)
         .single();
 
@@ -43,7 +43,6 @@ const UserPage = () => {
       }
       setProfile(profileData);
 
-      // 2. Profil ID'si ile linkleri getir
       const { data: linksData, error: linksError } = await supabase
         .from('links')
         .select('id, title, url')
@@ -81,7 +80,7 @@ const UserPage = () => {
     <div className="container mx-auto py-8 max-w-2xl">
       <header className="flex flex-col items-center text-center mb-8">
         <Avatar className="w-24 h-24 mb-4">
-          <AvatarImage src={`https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username} />
+          <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username} />
           <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <h1 className="text-3xl font-bold">@{profile?.username}</h1>
