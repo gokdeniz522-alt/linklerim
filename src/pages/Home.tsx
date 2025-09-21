@@ -24,12 +24,14 @@ interface LinkType {
   favicon_url: string | null;
 }
 
-type Theme = 'default' | 'minimalist' | 'glass';
+type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
 
 const themes: { id: Theme; name: string; description: string }[] = [
   { id: 'default', name: 'Varsayılan', description: 'Modern ve yuvarlak hatlı standart tema.' },
   { id: 'minimalist', name: 'Minimalist', description: 'Sade, gölgesiz ve keskin hatlı bir görünüm.' },
   { id: 'glass', name: 'Cam Efekti', description: 'Arka plan resmiyle en iyi çalışan, şeffaf ve modern bir tema.' },
+  { id: 'neon', name: 'Neon', description: 'Karanlık modda parlayan, canlı renklere sahip fütüristik bir tema.' },
+  { id: 'retro', name: 'Retro Terminal', description: 'Eski bilgisayar terminallerini andıran, nostaljik bir görünüm.' },
 ];
 
 const Home = () => {
