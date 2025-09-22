@@ -46,7 +46,7 @@ const LandingPage = () => {
                   <Link to="/signup">Ücretsiz Başla <Sparkles className="ml-2 h-5 w-5" /></Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="px-8 py-3 text-lg">
-                  <Link to="/dashboard">Demoyu Gör</Link>
+                  <Link to="/goko1">Demoyu Gör</Link>
                 </Button>
               </div>
             </div>
