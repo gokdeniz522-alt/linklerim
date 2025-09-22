@@ -75,6 +75,9 @@ const Home = () => {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubeVisibility, setYoutubeVisibility] = useState<YouTubeVisibility>('visible');
   const [youtubePosition, setYoutubePosition] = useState<YouTubePosition>('default');
+  const [usernameColor, setUsernameColor] = useState('#000000');
+  const [bioColor, setBioColor] = useState('#000000');
+  const [linkTitleColor, setLinkTitleColor] = useState('#000000');
 
   const profileHeaderImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,28 +92,32 @@ const Home = () => {
         setUser(user);
         
         const [profileResponse, linksResponse] = await Promise.all([
-          supabase.from('profiles').select('username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout, youtube_url, youtube_visibility, youtube_position').eq('id', user.id).single(),
+          supabase.from('profiles').select('*, username_color, bio_color, link_title_color').eq('id', user.id).single(),
           supabase.from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
         ]);
 
         if (profileResponse.error) {
           showError('Profil bilgileri yüklenemedi.');
         } else {
-          setUsername(profileResponse.data.username);
-          setAvatarUrl(profileResponse.data.avatar_url);
-          setBio(profileResponse.data.bio || '');
-          setBackgroundType(profileResponse.data.background_type || 'none');
-          if (profileResponse.data.background_type === 'color') {
-            setBackgroundColor(profileResponse.data.background_value || '#ffffff');
-          } else if (profileResponse.data.background_type === 'image') {
-            setBackgroundImageUrl(profileResponse.data.background_value);
+          const { data } = profileResponse;
+          setUsername(data.username);
+          setAvatarUrl(data.avatar_url);
+          setBio(data.bio || '');
+          setBackgroundType(data.background_type || 'none');
+          if (data.background_type === 'color') {
+            setBackgroundColor(data.background_value || '#ffffff');
+          } else if (data.background_type === 'image') {
+            setBackgroundImageUrl(data.background_value);
           }
-          setProfileHeaderImageUrl(profileResponse.data.profile_header_image_url);
-          setSelectedTheme(profileResponse.data.theme || 'default');
-          setSelectedLayout(profileResponse.data.layout || 'default');
-          setYoutubeUrl(profileResponse.data.youtube_url || '');
-          setYoutubeVisibility(profileResponse.data.youtube_visibility || 'visible');
-          setYoutubePosition(profileResponse.data.youtube_position || 'default');
+          setProfileHeaderImageUrl(data.profile_header_image_url);
+          setSelectedTheme(data.theme || 'default');
+          setSelectedLayout(data.layout || 'default');
+          setYoutubeUrl(data.youtube_url || '');
+          setYoutubeVisibility(data.youtube_visibility || 'visible');
+          setYoutubePosition(data.youtube_position || 'default');
+          setUsernameColor(data.username_color || '#000000');
+          setBioColor(data.bio_color || '#000000');
+          setLinkTitleColor(data.link_title_color || '#000000');
         }
 
         if (linksResponse.error) {
@@ -264,6 +271,9 @@ const Home = () => {
         youtube_url: youtubeUrl,
         youtube_visibility: youtubeVisibility,
         youtube_position: youtubePosition,
+        username_color: usernameColor,
+        bio_color: bioColor,
+        link_title_color: linkTitleColor,
       })
       .eq('id', user.id);
 
@@ -457,6 +467,33 @@ const Home = () => {
             <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
               {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Tasarımı Kaydet
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Yazı Rengi Ayarları</CardTitle>
+            <CardDescription>Profil sayfanızdaki metinlerin renklerini özelleştirin.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="username-color">Kullanıcı Adı Rengi</Label>
+              <Input id="username-color" type="color" value={usernameColor} onChange={(e) => setUsernameColor(e.target.value)} className="w-full h-10 p-1" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bio-color">Biyografi Rengi</Label>
+              <Input id="bio-color" type="color" value={bioColor} onChange={(e) => setBioColor(e.target.value)} className="w-full h-10 p-1" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-title-color">Link Başlığı Rengi</Label>
+              <Input id="link-title-color" type="color" value={linkTitleColor} onChange={(e) => setLinkTitleColor(e.target.value)} className="w-full h-10 p-1" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Renkleri Kaydet
             </Button>
           </CardFooter>
         </Card>

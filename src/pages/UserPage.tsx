@@ -28,6 +28,9 @@ interface Profile {
   youtube_url: string | null;
   youtube_visibility: YouTubeVisibility;
   youtube_position: YouTubePosition;
+  username_color: string | null;
+  bio_color: string | null;
+  link_title_color: string | null;
 }
 
 interface Link {
@@ -90,7 +93,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, bio, background_type, background_value, profile_header_image_url, theme, layout, youtube_url, youtube_visibility, youtube_position')
+        .select('*, username_color, bio_color, link_title_color')
         .eq('username', username)
         .single();
 
@@ -231,6 +234,10 @@ const UserPage = () => {
     backgroundRepeat: 'no-repeat',
   };
 
+  const usernameStyle: React.CSSProperties = profile?.username_color ? { color: profile.username_color } : {};
+  const bioStyle: React.CSSProperties = profile?.bio_color ? { color: profile.bio_color } : {};
+  const linkTitleStyle: React.CSSProperties = profile?.link_title_color ? { color: profile.link_title_color } : {};
+
   const ProfileSectionDefault = () => (
     <header 
       className={cn(
@@ -246,9 +253,9 @@ const UserPage = () => {
         <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${profile?.username}`} alt={profile?.username || ''} />
         <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
-      <h1 className={cn(themeClasses.username[theme])}>@{profile?.username}</h1>
+      <h1 className={cn(themeClasses.username[theme])} style={usernameStyle}>@{profile?.username}</h1>
       {profile?.bio && (
-        <p className={cn("mt-2 max-w-md", themeClasses.bio[theme])}>{profile.bio}</p>
+        <p className={cn("mt-2 max-w-md", themeClasses.bio[theme])} style={bioStyle}>{profile.bio}</p>
       )}
     </header>
   );
@@ -262,9 +269,9 @@ const UserPage = () => {
           <AvatarFallback>{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="pt-12">
-          <h1 className={cn(themeClasses.username[theme])}>@{profile?.username}</h1>
+          <h1 className={cn(themeClasses.username[theme])} style={usernameStyle}>@{profile?.username}</h1>
           {profile?.bio && (
-            <p className={cn("mt-1 max-w-md", themeClasses.bio[theme])}>{profile.bio}</p>
+            <p className={cn("mt-1 max-w-md", themeClasses.bio[theme])} style={bioStyle}>{profile.bio}</p>
           )}
         </div>
       </div>
@@ -288,7 +295,7 @@ const UserPage = () => {
                 {link.favicon_url && (
                   <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
                 )}
-                <p className={cn(themeClasses.linkTitle[theme])}>{link.title}</p>
+                <p className={cn(themeClasses.linkTitle[theme])} style={linkTitleStyle}>{link.title}</p>
               </CardContent>
             </Card>
           </a>
