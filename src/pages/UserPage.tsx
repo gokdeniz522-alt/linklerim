@@ -293,7 +293,7 @@ const UserPage = () => {
             <Card className={cn(themeClasses.linkCard[theme])}>
               <CardContent className="p-4 text-center flex items-center justify-center gap-3">
                 {link.favicon_url && (
-                  <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
+                  <img src={link.favicon_url} alt="Favicon" className="w-9 h-5 rounded-full" />
                 )}
                 <p className={cn(themeClasses.linkTitle[theme])} style={linkTitleStyle}>{link.title}</p>
               </CardContent>
