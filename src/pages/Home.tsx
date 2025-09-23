@@ -169,7 +169,7 @@ const Home = () => {
 
     const result = await response.json();
     if (result.success) {
-      return result.data.display_url;
+      return result.data.url; // <-- DEĞİŞİKLİK BURADA: display_url yerine url kullanılıyor
     } else {
       throw new Error(result.error.message || 'Resim yüklenemedi.');
     }
