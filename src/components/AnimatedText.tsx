@@ -11,8 +11,8 @@ interface AnimatedTextProps {
 const AnimatedText: React.FC<AnimatedTextProps> = ({
   phrases,
   className,
-  interval = 3000, // Varsayılan 3 saniye
-  animationDuration = 3, // Varsayılan 0.5 saniye
+  interval = 1000, // Varsayılan 3 saniye
+  animationDuration = 500, // Varsayılan 0.5 saniye
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
