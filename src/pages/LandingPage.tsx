@@ -27,6 +27,7 @@ import {
   Code
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import AnimatedText from '@/components/AnimatedText'; // Yeni eklenen import
 
 const features = [
   {
@@ -163,6 +164,13 @@ const LandingPage = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const animatedPhrases = [
+    "Dijital Varlıklarınızı Tek Bir Noktada Toplayın",
+    "Tüm Bağlantılarınızı Kolayca Yönetin",
+    "Profilinizi Kişiselleştirin ve Paylaşın",
+    "Tek Linkle Tüm Dünyanızı Gösterin"
+  ];
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header */}
@@ -205,9 +213,7 @@ const LandingPage = () => {
                 <Sparkles className="mr-2 h-3 w-3" />
                 Yeni Özellikler!
               </Badge>
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl xl:text-7xl/none bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
-                Dijital Varlıklarınızı Tek Bir Noktada Toplayın
-              </h1>
+              <AnimatedText phrases={animatedPhrases} /> {/* Yeni AnimatedText bileşeni */}
               <p className="max-w-[700px] text-lg text-muted-foreground md:text-xl mx-auto">
                 Sosyal medya hesaplarınızı, portfolyonuzu ve önemli bağlantılarınızı tek bir şık ve özelleştirilebilir sayfada toplayın. Profesyonel görünümlü bağlantı sayfaları oluşturun.
               </p>
