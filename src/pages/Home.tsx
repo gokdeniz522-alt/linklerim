@@ -801,7 +801,7 @@ const Home = () => {
               </div>
               {subscriptionPlan === 'free' && (
                 <div className="text-sm text-muted-foreground">
-                  <span className="font-medium">{links.length}/5</span> ücretsiz link limitiniz kaldı.
+                  <span className="font-medium">{links.length}/15</span> ücretsiz link limitiniz kaldı.
                 </div>
               )}
             </CardContent>
