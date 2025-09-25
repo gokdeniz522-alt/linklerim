@@ -497,7 +497,7 @@ const Home = () => {
                     <Icon className="h-8 w-8 mb-2" />
                     <h3 className="font-semibold">{layout.name}</h3>
                     <p className="text-sm text-muted-foreground">{layout.description}</p>
-                    {layout.pro && (
+                    {&& (
                       <Badge className="absolute top-2 right-2" variant="secondary">Pro</Badge>
                     )}
                   </div>
