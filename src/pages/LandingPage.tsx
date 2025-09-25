@@ -214,7 +214,7 @@ const LandingPage = () => {
                 Yeni Özellikler!
               </Badge>
               <AnimatedText phrases={animatedPhrases} /> {/* Yeni AnimatedText bileşeni */}
-              <p className="max-w-[755px] text-lg text-muted-foreground md:text-xl mx-auto">
+              <p className="max-w-[555px] text-lg text-muted-foreground md:text-xl mx-auto">
                 Sosyal medya hesaplarınızı, portfolyonuzu ve önemli bağlantılarınızı tek bir şık ve özelleştirilebilir sayfada toplayın. Profesyonel görünümlü bağlantı sayfaları oluşturun.
               </p>
             </div>
