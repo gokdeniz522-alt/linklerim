@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { CheckCircle, XCircle, Sparkles, Crown } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { showError } from '@/utils/toast';
+import EcwidProductWidget from '@/components/EcwidProductWidget'; // Yeni eklenen import
 
 const plans = [
   {
@@ -96,18 +97,9 @@ export default function Pricing() {
     fetchUserProfile();
   }, []);
 
-  const handleCheckout = () => {
-    // Kullanıcı giriş yapmamışsa önce giriş yapması için yönlendir
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-      
-      // Ecwid ödeme sayfasına yönlendirme
-      window.location.href = 'https://linkkoy.ecwid.com/linkkoy-pro-p100001234';
-    });
-  };
+  // handleCheckout fonksiyonu artık doğrudan kullanılmayacak, Ecwid widget'ı kendi ödeme akışını yönetecek.
+  // Ancak, kullanıcı giriş yapmamışsa Ecwid widget'ını göstermeden önce giriş yapmaya yönlendirmek için
+  // bir kontrol ekleyebiliriz. Şimdilik, widget'ı doğrudan render edeceğiz ve Ecwid'in kendi akışını kullanacağız.
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Yükleniyor...</div>;
@@ -218,22 +210,14 @@ export default function Pricing() {
                         <Link to="/dashboard">Planı Seç</Link>
                       </Button>
                     )
-                  ) : (
+                  ) : ( // Bu kısım Pro plan için
                     subscriptionPlan === 'pro' ? (
                       <Button className="w-full" disabled>
                         Mevcut Planınız
                       </Button>
                     ) : (
-                      <Button 
-                        onClick={handleCheckout}
-                        className={`w-full ${
-                          plan.popular 
-                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700' 
-                            : ''
-                        }`}
-                      >
-                        {plan.cta}
-                      </Button>
+                      // Ecwid widget'ını burada render et
+                      <EcwidProductWidget />
                     )
                   )}
                 </CardFooter>
