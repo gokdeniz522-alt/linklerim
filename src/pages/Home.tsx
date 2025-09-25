@@ -16,6 +16,7 @@ import { getFaviconUrl } from '@/utils/favicon';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import SortableLinkList from '@/components/SortableLinkList'; // Yeni import
 
 interface LinkType {
   id: number;
@@ -24,6 +25,8 @@ interface LinkType {
   created_at: string;
   click_count: number;
   favicon_url: string | null;
+  order: number; // Yeni eklendi
+  is_visible: boolean; // Yeni eklendi
 }
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
@@ -96,7 +99,7 @@ const Home = () => {
         
         const [profileResponse, linksResponse] = await Promise.all([
           supabase.from('profiles').select('*, username_color, bio_color, link_title_color, subscription_plan').eq('id', user.id).single(),
-          supabase.from('links').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+          supabase.from('links').select('*').eq('user_id', user.id).order('order', { ascending: true }) // order sütununa göre sırala
         ]);
 
         if (profileResponse.error) {
@@ -305,16 +308,18 @@ const Home = () => {
 
     setIsSubmitting(true);
     const favicon_url = getFaviconUrl(newLinkUrl);
+    const newOrder = links.length > 0 ? Math.max(...links.map(link => link.order)) + 1 : 0; // Yeni linke en yüksek sıradan bir sonraki sırayı ver
+    
     const { data, error } = await supabase
       .from('links')
-      .insert([{ title: newLinkTitle, url: newLinkUrl, user_id: user.id, favicon_url: favicon_url }])
+      .insert([{ title: newLinkTitle, url: newLinkUrl, user_id: user.id, favicon_url: favicon_url, order: newOrder, is_visible: true }])
       .select()
       .single();
 
     if (error) {
       showError('Link eklenirken bir hata oluştu.');
     } else if (data) {
-      setLinks([data, ...links]);
+      setLinks([data, ...links].sort((a, b) => a.order - b.order)); // Yeni linki ekledikten sonra sıralamayı koru
       setNewLinkTitle('');
       setNewLinkUrl('');
       showSuccess('Link başarıyla eklendi!');
@@ -329,6 +334,58 @@ const Home = () => {
     } else {
       setLinks(links.filter(link => link.id !== linkId));
       showSuccess('Link başarıyla silindi.');
+    }
+  };
+
+  const handleReorderLinks = async (activeId: number, overId: number) => {
+    if (activeId === overId) return;
+
+    const oldIndex = links.findIndex(link => link.id === activeId);
+    const newIndex = links.findIndex(link => link.id === overId);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newLinks = Array.from(links);
+    const [movedLink] = newLinks.splice(oldIndex, 1);
+    newLinks.splice(newIndex, 0, movedLink);
+
+    // Update order values
+    const updatedLinksWithOrder = newLinks.map((link, index) => ({
+      ...link,
+      order: index,
+    }));
+
+    setLinks(updatedLinksWithOrder); // UI'ı hemen güncelle
+
+    // Supabase'de toplu güncelleme
+    const { error } = await supabase
+      .from('links')
+      .upsert(updatedLinksWithOrder.map(link => ({ id: link.id, order: link.order })));
+
+    if (error) {
+      showError('Link sıralaması güncellenirken bir hata oluştu.');
+      // Hata durumunda eski duruma geri dönmek isteyebiliriz
+      // setLinks(oldLinks);
+    } else {
+      showSuccess('Link sıralaması başarıyla güncellendi!');
+    }
+  };
+
+  const handleToggleLinkVisibility = async (linkId: number, isVisible: boolean) => {
+    const { error } = await supabase
+      .from('links')
+      .update({ is_visible: isVisible })
+      .eq('id', linkId);
+
+    if (error) {
+      showError('Link görünürlüğü güncellenirken bir hata oluştu.');
+    } else {
+      setLinks(prevLinks =>
+        prevLinks.map(link =>
+          link.id === linkId ? { ...link, is_visible: isVisible } : link
+        )
+      );
+      showSuccess('Link görünürlüğü başarıyla güncellendi!');
     }
   };
 
@@ -750,38 +807,16 @@ const Home = () => {
               </div>
             )}
           </div>
-          <div className="space-y-4">
-            {links.length > 0 ? (
-              links.map(link => (
-                <Card key={link.id}>
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {link.favicon_url && (
-                        <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
-                      )}
-                      <div>
-                        <p className="font-semibold">{link.title}</p>
-                        <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline">
-                          {link.url}
-                        </a>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Eye className="h-4 w-4" />
-                        <span>{link.click_count}</span>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteLink(link.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <p className="text-muted-foreground text-center py-4">Henüz hiç link eklemedin.</p>
-            )}
-          </div>
+          {links.length > 0 ? (
+            <SortableLinkList
+              links={links}
+              onReorder={handleReorderLinks}
+              onDelete={handleDeleteLink}
+              onToggleVisibility={handleToggleLinkVisibility}
+            />
+          ) : (
+            <p className="text-muted-foreground text-center py-4">Henüz hiç link eklemedin.</p>
+          )}
         </div>
       </main>
     </div>

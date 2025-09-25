@@ -38,6 +38,8 @@ interface Link {
   title: string;
   url: string;
   favicon_url: string | null;
+  order: number; // Yeni eklendi
+  is_visible: boolean; // Yeni eklendi
 }
 
 const YouTubePlayer = ({ videoId, visibility, position }: { videoId: string; visibility: YouTubeVisibility; position: YouTubePosition }) => {
@@ -106,14 +108,15 @@ const UserPage = () => {
 
       const { data: linksData, error: linksError } = await supabase
         .from('links')
-        .select('id, title, url, favicon_url')
+        .select('id, title, url, favicon_url, order, is_visible') // order ve is_visible sütunlarını da çek
         .eq('user_id', profileData.id)
-        .order('created_at', { ascending: false });
+        .order('order', { ascending: true }); // order sütununa göre sırala
 
       if (linksError) {
         setError('Linkler yüklenirken bir hata oluştu.');
       } else {
-        setLinks(linksData);
+        // Sadece görünür olan linkleri filtrele
+        setLinks(linksData ? linksData.filter(link => link.is_visible) : []);
       }
 
       setLoading(false);
