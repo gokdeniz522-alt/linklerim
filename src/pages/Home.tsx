@@ -479,7 +479,7 @@ const Home = () => {
               const isLocked = isProFeature(layout.pro);
               
               return (
-                <ProFeatureTooltip featurePro={layout.pro}>
+                <ProFeatureTooltip key={layout.id} >
                   <div
                     className={cn(
                       'p-4 border rounded-lg cursor-pointer transition-all flex flex-col items-center text-center relative',
