@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/supabase';
 import { showError } from '@/utils/toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Link as LinkIcon } from 'lucide-react'; // LinkIcon eklendi
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const SignUp = () => {
@@ -38,17 +38,24 @@ const SignUp = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background relative">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-900 dark:to-black relative p-4">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Kayıt Ol</CardTitle>
-          <CardDescription>Hesap oluşturmak için bilgilerinizi girin.</CardDescription>
+      <Card className="w-full max-w-sm shadow-lg rounded-xl">
+        <CardHeader className="text-center pt-6 pb-4">
+          <div className="flex items-center justify-center space-x-2 mb-2">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-md">
+              <LinkIcon className="h-5 w-5 text-white" />
+            </div>
+            <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+              Linkkoy
+            </CardTitle>
+          </div>
+          <CardDescription className="text-base text-muted-foreground">Hesap oluşturmak için bilgilerinizi girin.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignUp}>
-          <CardContent className="grid gap-4">
+          <CardContent className="grid gap-4 px-6 pb-4">
             <div className="grid gap-2">
               <Label htmlFor="username">Kullanıcı Adı</Label>
               <Input id="username" placeholder="kullaniciadim" required value={username} onChange={(e) => setUsername(e.target.value)} />
@@ -62,14 +69,14 @@ const SignUp = () => {
               <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+          <CardFooter className="flex flex-col gap-4 px-6 pb-6">
+            <Button type="submit" className="w-full rounded-lg py-2 text-lg font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Kayıt Ol
             </Button>
-            <div className="text-center text-sm">
+            <div className="text-center text-sm text-muted-foreground">
               Zaten bir hesabın var mı?{' '}
-              <Link to="/login" className="underline">
+              <Link to="/login" className="underline text-primary hover:text-primary/80">
                 Giriş Yap
               </Link>
             </div>
