@@ -498,7 +498,7 @@ const Home = () => {
                     <h3 className="font-semibold">{layout.name}</h3>
                     <p className="text-sm text-muted-foreground">{layout.description}</p>
                     {layout.pro && (
-                      <Badge className="absolute top-2 right-2" variant="secondary">Pro</Badge>
+                      <Badge className="absolute top-2 right-2" variant="secondary">Prsssso</Badge>
                     )}
                   </div>
                 </ProFeatureTooltip>
