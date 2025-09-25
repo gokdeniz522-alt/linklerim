@@ -301,8 +301,8 @@ const Home = () => {
     if (!user) return;
 
     // Ücretsiz plan kullanıcıları için link sınırı kontrolü
-    if (subscriptionPlan === 'free' && links.length >= 5) {
-      showError('Ücretsiz planda en fazla 5 link ekleyebilirsiniz. Daha fazlası için Pro planına yükseltin.');
+    if (subscriptionPlan === 'free' && links.length >= 15) {
+      showError('Ücretsiz planda en fazla 15 link ekleyebilirsiniz. Daha fazlası için Pro planına yükseltin.');
       return;
     }
 
