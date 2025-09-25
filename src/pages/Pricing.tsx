@@ -1,10 +1,13 @@
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, XCircle, Sparkles } from 'lucide-react';
+import { CheckCircle, XCircle, Sparkles, Crown } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { showError } from '@/utils/toast';
 
 const plans = [
   {
@@ -68,6 +71,48 @@ const faqs = [
 ];
 
 export default function Pricing() {
+  const [subscriptionPlan, setSubscriptionPlan] = useState<'free' | 'pro'>('free');
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('subscription_plan')
+          .eq('id', user.id)
+          .single();
+
+        if (!error && data) {
+          setSubscriptionPlan(data.subscription_plan || 'free');
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  const handleCheckout = () => {
+    // Kullanıcı giriş yapmamışsa önce giriş yapması için yönlendir
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      
+      // Ecwid ödeme sayfasına yönlendirme
+      window.location.href = 'https://linkkoy.ecwid.com/linkkoy-pro-p100001234';
+    });
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Yükleniyor...</div>;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
@@ -118,6 +163,10 @@ export default function Pricing() {
                 key={index} 
                 className={`rounded-2xl border bg-card text-card-foreground shadow transition-all hover:shadow-lg ${
                   plan.popular ? 'border-indigo-500 relative' : ''
+                } ${
+                  (plan.name === "Ücretsiz" && subscriptionPlan === 'free') || 
+                  (plan.name === "Pro" && subscriptionPlan === 'pro') 
+                    ? 'ring-2 ring-primary' : ''
                 }`}
               >
                 {plan.popular && (
@@ -125,6 +174,15 @@ export default function Pricing() {
                     EN POPÜLER
                   </div>
                 )}
+                {(plan.name === "Ücretsiz" && subscriptionPlan === 'free') || 
+                 (plan.name === "Pro" && subscriptionPlan === 'pro') ? (
+                  <div className="absolute top-4 right-4">
+                    <Badge variant="default" className="flex items-center gap-1">
+                      <Crown className="h-3 w-3" />
+                      Mevcut Planınız
+                    </Badge>
+                  </div>
+                ) : null}
                 <CardHeader>
                   <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
                   <div className="mt-2">
@@ -150,16 +208,34 @@ export default function Pricing() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    asChild 
-                    className={`w-full ${
-                      plan.popular 
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700' 
-                        : ''
-                    }`}
-                  >
-                    <Link to="/signup">{plan.cta}</Link>
-                  </Button>
+                  {plan.name === "Ücretsiz" ? (
+                    subscriptionPlan === 'free' ? (
+                      <Button className="w-full" disabled>
+                        Mevcut Planınız
+                      </Button>
+                    ) : (
+                      <Button asChild className="w-full">
+                        <Link to="/dashboard">Planı Seç</Link>
+                      </Button>
+                    )
+                  ) : (
+                    subscriptionPlan === 'pro' ? (
+                      <Button className="w-full" disabled>
+                        Mevcut Planınız
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleCheckout}
+                        className={`w-full ${
+                          plan.popular 
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700' 
+                            : ''
+                        }`}
+                      >
+                        {plan.cta}
+                      </Button>
+                    )
+                  )}
                 </CardFooter>
               </Card>
             ))}
