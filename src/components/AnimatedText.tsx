@@ -33,7 +33,7 @@ const AnimatedText: React.FC<AnimatedTextProps> = ({
   return (
     <h1
       className={cn(
-        "text-4xl font-extrabold tracking-tight sm:text-5xl xl:text-7xl/none bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-60 p-4",
+        "text-4xl font-extrabold tracking-tight sm:text-5xl xl:text-7xl/none bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-500 p-4",
         "transition-opacity ease-in-out", // Opaklık geçişi için Tailwind sınıfı
         isVisible ? "opacity-100" : "opacity-0", // Görünürlük kontrolü
         className
