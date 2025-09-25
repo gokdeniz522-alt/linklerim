@@ -17,7 +17,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Trash2 } from 'lucide-react';
+import { Eye, Trash2, GripVertical } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
@@ -67,23 +67,31 @@ const SortableItem: React.FC<SortableItemProps> = ({ link, onDelete, onToggleVis
       ref={setNodeRef}
       style={style}
       className={cn(
-        "p-4 flex items-center justify-between cursor-grab",
+        "p-4 flex items-center justify-between",
         isDragging ? "ring-2 ring-primary" : ""
       )}
       {...attributes}
-      {...listeners}
     >
-      <CardContent className="p-0 flex items-center gap-3 flex-grow">
-        {link.favicon_url && (
-          <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
-        )}
-        <div>
-          <p className="font-semibold">{link.title}</p>
-          <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline">
-            {link.url}
-          </a>
+      <div className="flex items-center gap-3 flex-grow">
+        {/* Drag Handle */}
+        <div {...listeners} className="cursor-grab touch-none p-1 -ml-1">
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
         </div>
-      </CardContent>
+
+        {/* Link Content */}
+        <CardContent className="p-0 flex items-center gap-3 flex-grow">
+          {link.favicon_url && (
+            <img src={link.favicon_url} alt="Favicon" className="w-5 h-5 rounded-full" />
+          )}
+          <div>
+            <p className="font-semibold">{link.title}</p>
+            <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline">
+              {link.url}
+            </a>
+          </div>
+        </CardContent>
+      </div>
+      
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Eye className="h-4 w-4" />
@@ -112,8 +120,8 @@ const SortableLinkList: React.FC<SortableLinkListProps> = ({ links, onReorder, o
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active.id !== over?.id) {
-      onReorder(active.id as number, over?.id as number);
+    if (over && active.id !== over.id) {
+      onReorder(active.id as number, over.id as number);
     }
   };
 
