@@ -357,35 +357,51 @@ const Home = () => {
 
     setLinks(updatedLinksWithOrder); // UI'ı hemen güncelle
 
-    // Supabase'de toplu güncelleme
-    const { error } = await supabase
-      .from('links')
-      .upsert(updatedLinksWithOrder.map(link => ({ id: link.id, order: link.order })));
-
-    if (error) {
-      showError('Link sıralaması güncellenirken bir hata oluştu.');
+    // Supabase'de her bir link için ayrı ayrı güncelleme yap
+    try {
+      const updatePromises = updatedLinksWithOrder.map(link => 
+        supabase
+          .from('links')
+          .update({ order: link.order })
+          .eq('id', link.id)
+          .eq('user_id', user?.id) // Güvenlik için user_id'yi de kontrol et
+      );
+      
+      const results = await Promise.all(updatePromises);
+      
+      // Hataları kontrol et
+      const hasError = results.some(result => result.error);
+      if (hasError) {
+        const firstError = results.find(result => result.error)?.error;
+        throw new Error(firstError?.message || 'Bazı linklerin sıralaması güncellenirken bir hata oluştu.');
+      }
+      
+      showSuccess('Link sıralaması başarıyla güncellendi!');
+    } catch (error: any) {
+      showError(error.message || 'Link sıralaması güncellenirken bir hata oluştu.');
       // Hata durumunda eski duruma geri dönmek isteyebiliriz
       // setLinks(oldLinks);
-    } else {
-      showSuccess('Link sıralaması başarıyla güncellendi!');
     }
   };
 
   const handleToggleLinkVisibility = async (linkId: number, isVisible: boolean) => {
-    const { error } = await supabase
-      .from('links')
-      .update({ is_visible: isVisible })
-      .eq('id', linkId);
+    try {
+      const { error } = await supabase
+        .from('links')
+        .update({ is_visible: isVisible })
+        .eq('id', linkId)
+        .eq('user_id', user?.id); // Güvenlik için user_id'yi de kontrol et
 
-    if (error) {
-      showError('Link görünürlüğü güncellenirken bir hata oluştu.');
-    } else {
+      if (error) throw new Error(error.message);
+
       setLinks(prevLinks =>
         prevLinks.map(link =>
           link.id === linkId ? { ...link, is_visible: isVisible } : link
         )
       );
       showSuccess('Link görünürlüğü başarıyla güncellendi!');
+    } catch (error: any) {
+      showError(error.message || 'Link görünürlüğü güncellenirken bir hata oluştu.');
     }
   };
 
