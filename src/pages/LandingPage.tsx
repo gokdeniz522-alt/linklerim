@@ -173,7 +173,7 @@ const LandingPage = () => {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link to="/dashboard">Demoyu Gör</Link>
+                <Link to="/dashboard">Giriş yap</Link>
               </Button>
             </div>
           </div>
