@@ -182,6 +182,7 @@ const LandingPage = () => {
               <a href="#how-it-works" className="transition-all hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Nasıl Çalışır</a>
               <a href="#testimonials" className="transition-all hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Yorumlar</a>
               <a href="#faq" className="transition-all hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">SSS</a>
+              <Link to="/pricing" className="transition-all hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Fiyatlandırma</Link>
             </nav>
             <Separator orientation="vertical" className="mx-2 h-6 hidden md:block" />
             <Button asChild variant="ghost" size="sm" className="rounded-lg">
@@ -225,7 +226,7 @@ const LandingPage = () => {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="rounded-xl px-8 py-6 text-lg font-semibold border-2 backdrop-blur-sm">
-                <Link to="/dashboard">Giriş Yap</Link>
+                <Link to="/dashboard">Demoyu Gör</Link>
               </Button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-12">

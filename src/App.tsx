@@ -8,7 +8,8 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import UserPage from './pages/UserPage';
 import NotFound from "./pages/NotFound";
-import LandingPage from './pages/LandingPage'; // Yeni LandingPage'i import ediyoruz
+import LandingPage from './pages/LandingPage';
+import Pricing from './pages/Pricing'; // Yeni eklenen sayfa
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -46,6 +47,8 @@ const App = () => {
           <Route path="/signup" element={!session ? <SignUp /> : <Navigate to="/dashboard" />} />
           {/* Kullanıcı profil sayfası */}
           <Route path="/:username" element={<UserPage />} />
+          {/* Fiyatlandırma sayfası */}
+          <Route path="/pricing" element={<Pricing />} />
           {/* Bulunamayan sayfalar */}
           <Route path="*" element={<NotFound />} />
         </Routes>
