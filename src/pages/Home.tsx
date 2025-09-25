@@ -41,8 +41,8 @@ const themes: { id: Theme; name: string; description: string; pro: boolean }[] =
 
 const layouts: { id: Layout; name: string; description: string; icon: React.ElementType; pro: boolean }[] = [
     { id: 'default', name: 'Varsayılan', description: 'Profil bilgileri sayfanın üst kısmında yer alır.', icon: LayoutIcon, pro: false },
-    { id: 'sidebar-left', name: 'Kenar Çubuğu', description: 'Profil bilgileri solda, linkler sağda listelenir.', icon: PanelLeft, pro: false },
-    { id: 'modern-cover', name: 'Modern Cover', description: 'Geniş kapak resmi ve alta konumlanmış avatar.', icon: ImageIcon, pro: true },
+    { id: 'sidebar-left', name: 'Kenar Çubuğu', description: 'Profil bilgileri solda, linkler sağda listelenir.', icon: PanelLeft, pro: true },
+    { id: 'modern-cover', name: 'Modern Cover', description: 'Geniş kapak resmi ve alta konumlanmış avatar.', icon: ImageIcon, pro: false },
 ];
 
 const youtubePositions: { id: YouTubePosition; name: string; description: string; icon: React.ElementType; pro: boolean }[] = [
