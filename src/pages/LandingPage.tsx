@@ -164,7 +164,7 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-foreground">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between px-4">
@@ -178,11 +178,11 @@ const LandingPage = () => {
           </Link>
           <div className="flex items-center gap-2">
             <nav className="hidden md:flex items-center space-x-1 text-sm font-medium">
-              <a href="#features" className="transition-all hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Özellikler</a>
-              <a href="#how-it-works" className="transition-all hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Nasıl Çalışır</a>
-              <a href="#testimonials" className="transition-all hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Yorumlar</a>
-              <a href="#faq" className="transition-all hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">SSS</a>
-              <Link to="/pricing" className="transition-all hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Fiyatlandırma</Link>
+              <a href="#features" className="transition-colors hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Özellikler</a>
+              <a href="#how-it-works" className="transition-colors hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Nasıl Çalışır</a>
+              <a href="#testimonials" className="transition-colors hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Yorumlar</a>
+              <a href="#faq" className="transition-colors hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">SSS</a>
+              <Link to="/pricing" className="transition-colors hover:text-foreground/80 text-foreground/60 px-3 py-2 rounded-lg hover:bg-accent">Fiyatlandırma</Link>
             </nav>
             <Separator orientation="vertical" className="mx-2 h-6 hidden md:block" />
             <Button asChild variant="ghost" size="sm" className="rounded-lg">
@@ -197,18 +197,11 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative w-full py-12 md:py-24 lg:py-32 xl:py-48 overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-          <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-          <div className="absolute bottom-1/4 left-1/2 w-64 h-64 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-        </div>
-        
+      <section className="relative w-full py-12 md:py-24 lg:py-32 xl:py-48 overflow-hidden bg-background">
         <div className="container relative z-10 px-4 md:px-6">
           <div className="flex flex-col items-center space-y-8 text-center">
             <div className="space-y-4">
-              <Badge variant="secondary" className="px-4 py-1 rounded-full text-sm font-medium bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+              <Badge variant="secondary" className="px-4 py-1 rounded-full text-sm font-medium">
                 <Sparkles className="mr-2 h-3 w-3" />
                 Yeni Özellikler!
               </Badge>
@@ -220,12 +213,12 @@ const LandingPage = () => {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button asChild size="lg" className="rounded-xl px-8 py-6 text-lg font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all">
+              <Button asChild size="lg" className="rounded-xl px-8 py-6 text-lg font-semibold bg-primary hover:bg-primary/90 shadow-md transition-colors">
                 <Link to="/signup">
                   <Play className="mr-2 h-5 w-5" /> Ücretsiz Başla
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="rounded-xl px-8 py-6 text-lg font-semibold border-2 backdrop-blur-sm">
+              <Button asChild variant="outline" size="lg" className="rounded-xl px-8 py-6 text-lg font-semibold border-2">
                 <Link to="/dashboard">Giriş Yap</Link>
               </Button>
             </div>
@@ -242,7 +235,7 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm">
+      <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-muted/50">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
@@ -258,10 +251,10 @@ const LandingPage = () => {
               return (
                 <Card 
                   key={index} 
-                  className="rounded-2xl border bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group"
+                  className="rounded-2xl border bg-card shadow-md hover:shadow-lg transition-shadow duration-300 group"
                 >
                   <CardHeader className="pb-4">
-                    <div className={`p-3 w-14 h-14 rounded-xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <div className={`p-3 w-14 h-14 rounded-xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-4`}>
                       <Icon className="h-6 w-6 text-white" />
                     </div>
                     <CardTitle className="text-xl font-bold">{feature.title}</CardTitle>
@@ -293,8 +286,7 @@ const LandingPage = () => {
               return (
                 <div key={index} className="flex flex-col items-center text-center group">
                   <div className="relative mb-8">
-                    <div className="absolute inset-0 bg-indigo-600 rounded-full blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                    <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 mb-6 group-hover:scale-110 transition-transform">
+                    <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 mb-6">
                       <Icon className="h-8 w-8" />
                     </div>
                     <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white dark:border-gray-800 bg-indigo-600 text-white font-bold text-sm">
@@ -313,7 +305,7 @@ const LandingPage = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+      <section id="testimonials" className="w-full py-12 md:py-24 lg:py-32 bg-indigo-600 text-white">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
@@ -324,7 +316,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="mx-auto mt-16 max-w-3xl">
-            <Card className="rounded-2xl border-0 bg-white/10 backdrop-blur-lg shadow-2xl">
+            <Card className="rounded-2xl border-0 bg-white/20 shadow-lg">
               <CardContent className="p-8">
                 <div className="flex items-center space-x-4 mb-6">
                   <Avatar className="h-16 w-16 border-2 border-white">
@@ -359,7 +351,7 @@ const LandingPage = () => {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="w-full py-12 md:py-24 lg:py-32 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm">
+      <section id="faq" className="w-full py-12 md:py-24 lg:py-32 bg-muted/50">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
@@ -373,7 +365,7 @@ const LandingPage = () => {
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
                 <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="text-left text-lg font-medium hover:no-underline py-6 px-4 rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors">
+                  <AccordionTrigger className="text-left text-lg font-medium hover:no-underline py-6 px-4 rounded-lg hover:bg-accent transition-colors">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground pb-6 px-4">
@@ -387,23 +379,23 @@ const LandingPage = () => {
       </section>
 
       {/* Final CTA Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-primary text-primary-foreground">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-8 text-center">
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Hemen Başlayın</h2>
-              <p className="mx-auto max-w-[600px] text-indigo-100 md:text-xl">
+              <p className="mx-auto max-w-[600px] text-primary-foreground/80 md:text-xl">
                 Dijital varlıklarınızı yönetmeye bugün başlayın ve takipçilerinizle daha etkili bir şekilde bağlantı kurun.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
-              <Button asChild variant="secondary" size="lg" className="rounded-xl px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all">
+              <Button asChild variant="secondary" size="lg" className="rounded-xl px-8 py-6 text-lg font-semibold shadow-md hover:shadow-lg transition-shadow">
                 <Link to="/signup">
                   <Play className="mr-2 h-5 w-5" /> Ücretsiz Hesap Oluştur
                 </Link>
               </Button>
             </div>
-            <p className="text-sm text-indigo-200">
+            <p className="text-sm text-primary-foreground/70">
               Ücretsiz hesapla başlayın, sınırsız bağlantı paylaşın.
             </p>
           </div>
