@@ -806,7 +806,7 @@ const Home = () => {
               )}
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={isSubmitting || (subscriptionPlan === 'free' && links.length >= 5)}>
+              <Button type="submit" disabled={isSubmitting || (subscriptionPlan === 'free' && links.length >= 15)}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                 Ekle
               </Button>
