@@ -226,7 +226,7 @@ const LandingPage = () => {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="rounded-xl px-8 py-6 text-lg font-semibold border-2 backdrop-blur-sm">
-                <Link to="/dashboard">Demoyu Gör</Link>
+                <Link to="/dashboard">Giriş Yap</Link>
               </Button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-12">
