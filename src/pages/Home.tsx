@@ -819,7 +819,7 @@ const Home = () => {
             <h2 className="text-xl font-bold">Linklerin</h2>
             {subscriptionPlan === 'free' && (
               <div className="text-sm text-muted-foreground">
-                <span className="font-medium">{links.length}/5</span> link
+                <span className="font-medium">{links.length}/15</span> link
               </div>
             )}
           </div>
