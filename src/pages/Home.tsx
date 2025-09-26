@@ -39,7 +39,7 @@ const themes: { id: Theme; name: string; description: string; pro: boolean }[] =
   { id: 'minimalist', name: 'Minimalist', description: 'Sade, gölgesiz ve keskin hatlı bir görünüm.', pro: false },
   { id: 'glass', name: 'Cam Efekti', description: 'Arka plan resmiyle en iyi çalışan, şeffaf ve modern bir tema.', pro: true },
   { id: 'neon', name: 'Neon', description: 'Karanlık modda parlayan, canlı renklere sahip fütüristik bir tema.', pro: true },
-  { id: 'retro', name: 'Retro Terminal', description: 'Eski bilgisayar terminallerini andıran, nostaljik bir görünüm.', pro: true },
+  { id: 'retro', name: 'Retro Terminal', description: 'Eski bilgisayar terminallerini andıran, nostaljik bir görünüm.', pro: false },
 ];
 
 const layouts: { id: Layout; name: string; description: string; icon: React.ElementType; pro: boolean }[] = [
