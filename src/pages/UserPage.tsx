@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { getYouTubeVideoId } from '@/utils/youtube';
 import { Button } from '@/components/ui/button';
 import { PlayCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
 type Layout = 'default' | 'sidebar-left' | 'modern-cover';
@@ -31,6 +32,7 @@ interface Profile {
   username_color: string | null;
   bio_color: string | null;
   link_title_color: string | null;
+  kick_username: string | null; // Yeni eklendi
 }
 
 interface Link {
@@ -38,12 +40,17 @@ interface Link {
   title: string;
   url: string;
   favicon_url: string | null;
-  order: number; // Yeni eklendi
-  is_visible: boolean; // Yeni eklendi
+  order: number;
+  is_visible: boolean;
+}
+
+interface KickChannel {
+  isLive: boolean;
+  profilePic: string;
+  username: string;
 }
 
 const YouTubePlayer = ({ videoId, visibility, position }: { videoId: string; visibility: YouTubeVisibility; position: YouTubePosition }) => {
-  // Sesli otomatik oynatma için mute=0, kontrolleri gizlemek için controls=0
   const src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}`;
   
   if (visibility === 'hidden') {
@@ -82,6 +89,7 @@ const UserPage = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [links, setLinks] = useState<Link[]>([]);
+  const [kickChannel, setKickChannel] = useState<KickChannel | null>(null); // Yeni state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userInteracted, setUserInteracted] = useState(false);
@@ -95,7 +103,7 @@ const UserPage = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*, username_color, bio_color, link_title_color')
+        .select('*, username_color, bio_color, link_title_color, kick_username') // kick_username eklendi
         .eq('username', username)
         .single();
 
@@ -106,20 +114,41 @@ const UserPage = () => {
       }
       setProfile(profileData);
 
+      if (profileData.kick_username) {
+        fetchKickData(profileData.kick_username);
+      }
+
       const { data: linksData, error: linksError } = await supabase
         .from('links')
-        .select('id, title, url, favicon_url, order, is_visible') // order ve is_visible sütunlarını da çek
+        .select('id, title, url, favicon_url, order, is_visible')
         .eq('user_id', profileData.id)
-        .order('order', { ascending: true }); // order sütununa göre sırala
+        .order('order', { ascending: true });
 
       if (linksError) {
         setError('Linkler yüklenirken bir hata oluştu.');
       } else {
-        // Sadece görünür olan linkleri filtrele
         setLinks(linksData ? linksData.filter(link => link.is_visible) : []);
       }
 
       setLoading(false);
+    };
+
+    const fetchKickData = async (kickUsername: string) => {
+      try {
+        const response = await fetch(`https://api.allorigins.win/raw?url=https://kick.com/api/v2/channels/${kickUsername}`);
+        if (!response.ok) {
+          throw new Error('Kick API verisi alınamadı.');
+        }
+        const data = await response.json();
+        
+        setKickChannel({
+          isLive: data?.livestream?.is_live === true,
+          profilePic: data?.user?.profile_pic,
+          username: data?.user?.username,
+        });
+      } catch (err) {
+        console.error("Kick API hatası:", err);
+      }
     };
 
     fetchUserData();
@@ -283,6 +312,32 @@ const UserPage = () => {
 
   const LinksSection = () => (
     <main className="space-y-4 w-full px-4 md:px-0">
+      {kickChannel && (
+        <a 
+          href={`https://kick.com/${kickChannel.username}`} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="block"
+        >
+          <Card className={cn(themeClasses.linkCard[theme], 'border-2', kickChannel.isLive ? 'border-green-500' : 'border-gray-500')}>
+            <CardContent className="p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-12 h-12">
+                  <AvatarImage src={kickChannel.profilePic} alt={kickChannel.username} />
+                  <AvatarFallback>{kickChannel.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className={cn(themeClasses.linkTitle[theme])} style={linkTitleStyle}>Kick: {kickChannel.username}</p>
+                  <p className="text-sm text-muted-foreground">Kick Kanalı</p>
+                </div>
+              </div>
+              <Badge variant={kickChannel.isLive ? 'default' : 'secondary'} className={cn(kickChannel.isLive && 'bg-green-500 text-white animate-pulse')}>
+                {kickChannel.isLive ? 'CANLI' : 'ÇEVRİMDIŞI'}
+              </Badge>
+            </CardContent>
+          </Card>
+        </a>
+      )}
       {links.length > 0 ? (
         links.map(link => (
           <a 
@@ -304,7 +359,7 @@ const UserPage = () => {
           </a>
         ))
       ) : (
-        <p className={cn("text-center py-4", pageForcedClasses.includes('text-white') ? 'text-gray-200' : 'text-muted-foreground')}>Bu kullanıcının henüz eklenmiş bir linki yok.</p>
+        !kickChannel && <p className={cn("text-center py-4", pageForcedClasses.includes('text-white') ? 'text-gray-200' : 'text-muted-foreground')}>Bu kullanıcının henüz eklenmiş bir linki yok.</p>
       )}
     </main>
   );

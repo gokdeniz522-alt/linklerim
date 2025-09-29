@@ -16,7 +16,7 @@ import { getFaviconUrl } from '@/utils/favicon';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import SortableLinkList from '@/components/SortableLinkList'; // Yeni import
+import SortableLinkList from '@/components/SortableLinkList';
 
 interface LinkType {
   id: number;
@@ -25,8 +25,8 @@ interface LinkType {
   created_at: string;
   click_count: number;
   favicon_url: string | null;
-  order: number; // Yeni eklendi
-  is_visible: boolean; // Yeni eklendi
+  order: number;
+  is_visible: boolean;
 }
 
 type Theme = 'default' | 'minimalist' | 'glass' | 'neon' | 'retro';
@@ -39,7 +39,7 @@ const themes: { id: Theme; name: string; description: string; pro: boolean }[] =
   { id: 'minimalist', name: 'Minimalist', description: 'Sade, gölgesiz ve keskin hatlı bir görünüm.', pro: false },
   { id: 'glass', name: 'Cam Efekti', description: 'Arka plan resmiyle en iyi çalışan, şeffaf ve modern bir tema.', pro: true },
   { id: 'neon', name: 'Neon', description: 'Karanlık modda parlayan, canlı renklere sahip fütüristik bir tema.', pro: true },
-  { id: 'retro', name: 'Retro Terminal', description: 'Eski bilgisayar terminallerini andıran, nostaljik bir görünüm.', pro: false },
+  { id: 'retro', name: 'Retro Terminal', description: 'Eski bilgisayar terminallerini andıran, nostaljik bir görünüm.', pro: true },
 ];
 
 const layouts: { id: Layout; name: string; description: string; icon: React.ElementType; pro: boolean }[] = [
@@ -84,6 +84,7 @@ const Home = () => {
   const [bioColor, setBioColor] = useState('#000000');
   const [linkTitleColor, setLinkTitleColor] = useState('#000000');
   const [subscriptionPlan, setSubscriptionPlan] = useState<'free' | 'pro'>('free');
+  const [kickUsername, setKickUsername] = useState(''); // Yeni state
 
   const profileHeaderImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,8 +99,8 @@ const Home = () => {
         setUser(user);
         
         const [profileResponse, linksResponse] = await Promise.all([
-          supabase.from('profiles').select('*, username_color, bio_color, link_title_color, subscription_plan').eq('id', user.id).single(),
-          supabase.from('links').select('*').eq('user_id', user.id).order('order', { ascending: true }) // order sütununa göre sırala
+          supabase.from('profiles').select('*, username_color, bio_color, link_title_color, subscription_plan, kick_username').eq('id', user.id).single(),
+          supabase.from('links').select('*').eq('user_id', user.id).order('order', { ascending: true })
         ]);
 
         if (profileResponse.error) {
@@ -125,6 +126,7 @@ const Home = () => {
           setBioColor(data.bio_color || '#000000');
           setLinkTitleColor(data.link_title_color || '#000000');
           setSubscriptionPlan(data.subscription_plan || 'free');
+          setKickUsername(data.kick_username || ''); // Kick kullanıcı adını yükle
         }
 
         if (linksResponse.error) {
@@ -281,6 +283,7 @@ const Home = () => {
         username_color: usernameColor,
         bio_color: bioColor,
         link_title_color: linkTitleColor,
+        kick_username: kickUsername, // Kick kullanıcı adını kaydet
       })
       .eq('id', user.id);
 
@@ -300,15 +303,14 @@ const Home = () => {
     }
     if (!user) return;
 
-    // Ücretsiz plan kullanıcıları için link sınırı kontrolü
-    if (subscriptionPlan === 'free' && links.length >= 15) {
-      showError('Ücretsiz planda en fazla 15 link ekleyebilirsiniz. Daha fazlası için Pro planına yükseltin.');
+    if (subscriptionPlan === 'free' && links.length >= 5) {
+      showError('Ücretsiz planda en fazla 5 link ekleyebilirsiniz. Daha fazlası için Pro planına yükseltin.');
       return;
     }
 
     setIsSubmitting(true);
     const favicon_url = getFaviconUrl(newLinkUrl);
-    const newOrder = links.length > 0 ? Math.max(...links.map(link => link.order)) + 1 : 0; // Yeni linke en yüksek sıradan bir sonraki sırayı ver
+    const newOrder = links.length > 0 ? Math.max(...links.map(link => link.order)) + 1 : 0;
     
     const { data, error } = await supabase
       .from('links')
@@ -319,7 +321,7 @@ const Home = () => {
     if (error) {
       showError('Link eklenirken bir hata oluştu.');
     } else if (data) {
-      setLinks([data, ...links].sort((a, b) => a.order - b.order)); // Yeni linki ekledikten sonra sıralamayı koru
+      setLinks([data, ...links].sort((a, b) => a.order - b.order));
       setNewLinkTitle('');
       setNewLinkUrl('');
       showSuccess('Link başarıyla eklendi!');
@@ -349,27 +351,24 @@ const Home = () => {
     const [movedLink] = newLinks.splice(oldIndex, 1);
     newLinks.splice(newIndex, 0, movedLink);
 
-    // Update order values
     const updatedLinksWithOrder = newLinks.map((link, index) => ({
       ...link,
       order: index,
     }));
 
-    setLinks(updatedLinksWithOrder); // UI'ı hemen güncelle
+    setLinks(updatedLinksWithOrder);
 
-    // Supabase'de her bir link için ayrı ayrı güncelleme yap
     try {
       const updatePromises = updatedLinksWithOrder.map(link => 
         supabase
           .from('links')
           .update({ order: link.order })
           .eq('id', link.id)
-          .eq('user_id', user?.id) // Güvenlik için user_id'yi de kontrol et
+          .eq('user_id', user?.id)
       );
       
       const results = await Promise.all(updatePromises);
       
-      // Hataları kontrol et
       const hasError = results.some(result => result.error);
       if (hasError) {
         const firstError = results.find(result => result.error)?.error;
@@ -379,8 +378,6 @@ const Home = () => {
       showSuccess('Link sıralaması başarıyla güncellendi!');
     } catch (error: any) {
       showError(error.message || 'Link sıralaması güncellenirken bir hata oluştu.');
-      // Hata durumunda eski duruma geri dönmek isteyebiliriz
-      // setLinks(oldLinks);
     }
   };
 
@@ -390,7 +387,7 @@ const Home = () => {
         .from('links')
         .update({ is_visible: isVisible })
         .eq('id', linkId)
-        .eq('user_id', user?.id); // Güvenlik için user_id'yi de kontrol et
+        .eq('user_id', user?.id);
 
       if (error) throw new Error(error.message);
 
@@ -405,12 +402,10 @@ const Home = () => {
     }
   };
 
-  // Pro özellik kontrol fonksiyonu
   const isProFeature = (featurePro: boolean) => {
     return featurePro && subscriptionPlan !== 'pro';
   };
 
-  // Pro özellik için tooltip içeriği
   const ProFeatureTooltip = ({ children, featurePro }: { children: React.ReactNode; featurePro: boolean }) => {
     if (!isProFeature(featurePro)) {
       return <>{children}</>;
@@ -537,6 +532,25 @@ const Home = () => {
             <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
               {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Değişiklikleri Kaydet
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Entegrasyonlar</CardTitle>
+            <CardDescription>Diğer platformlardaki hesaplarınızı bağlayın.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="kick-username">Kick Kullanıcı Adı</Label>
+              <Input id="kick-username" placeholder="Örn: purplebixi" value={kickUsername} onChange={(e) => setKickUsername(e.target.value)} />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleUpdateProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Entegrasyonları Kaydet
             </Button>
           </CardFooter>
         </Card>
@@ -801,12 +815,12 @@ const Home = () => {
               </div>
               {subscriptionPlan === 'free' && (
                 <div className="text-sm text-muted-foreground">
-                  <span className="font-medium">{links.length}/15</span> ücretsiz link limitiniz kaldı.
+                  <span className="font-medium">{links.length}/5</span> ücretsiz link limitiniz kaldı.
                 </div>
               )}
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={isSubmitting || (subscriptionPlan === 'free' && links.length >= 15)}>
+              <Button type="submit" disabled={isSubmitting || (subscriptionPlan === 'free' && links.length >= 5)}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                 Ekle
               </Button>
@@ -819,7 +833,7 @@ const Home = () => {
             <h2 className="text-xl font-bold">Linklerin</h2>
             {subscriptionPlan === 'free' && (
               <div className="text-sm text-muted-foreground">
-                <span className="font-medium">{links.length}/15</span> link
+                <span className="font-medium">{links.length}/5</span> link
               </div>
             )}
           </div>
